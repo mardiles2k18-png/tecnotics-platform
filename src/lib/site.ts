@@ -37,36 +37,42 @@ export const services = [
     title: "Servicio tecnico",
     description:
       "Diagnostico, reparacion, mantencion y optimizacion de notebooks, computadores y equipos de trabajo.",
+    image: "/images/services/service-technical-support.png",
     icon: Wrench
   },
   {
     title: "Computadores y hardware",
     description:
       "Armado, actualizacion, limpieza, almacenamiento, respaldo y mejoras de rendimiento para uso diario o gaming.",
+    image: "/images/services/service-hardware.png",
     icon: Cpu
   },
   {
     title: "Redes y empresas",
     description:
       "Soporte tecnologico, redes, continuidad operativa y asesoria para negocios e instituciones locales.",
+    image: "/images/services/service-networks.png",
     icon: Network
   },
   {
     title: "Seguridad y respaldo",
     description:
       "Proteccion de datos, recuperacion, copias de seguridad, buenas practicas y configuracion segura.",
+    image: "/images/services/service-security-backup.png",
     icon: ShieldCheck
   },
   {
     title: "IA Tecnotics",
     description:
       "Uso de inteligencia artificial como apoyo para diagnostico, investigacion tecnica y asesoria tecnologica.",
+    image: "/images/services/service-ai.png",
     icon: Bot
   },
   {
     title: "Laboratorio Arcade",
     description:
       "Proyectos especiales, restauracion, configuracion y experiencias tecnologicas orientadas al mundo arcade.",
+    image: "/images/services/service-arcade.png",
     icon: Gamepad2
   }
 ];
