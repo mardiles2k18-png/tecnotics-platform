@@ -15,9 +15,16 @@ Plataforma web oficial de Tecnotics. La version `0.1.0` prepara la base del ecos
 ## Comandos
 
 ```bash
-npm install --legacy-peer-deps
-npm run dev
-npm run build
+pnpm install
+pnpm dev
+pnpm build
+```
+
+Tambien existen lanzadores locales para Windows:
+
+```powershell
+scripts\dev.cmd
+scripts\start.cmd
 ```
 
 ## Estructura inicial
@@ -26,4 +33,8 @@ npm run build
 - `src/components`: componentes reutilizables.
 - `src/lib`: configuracion y contenido compartido.
 - `public/images`: assets visuales del sitio.
-- `docs`: documentacion maestra, arquitectura y roadmap.
+- `docs`: documentacion maestra, arquitectura, marca y roadmap.
+
+## Licencia
+
+MIT. Ver `LICENSE`.
