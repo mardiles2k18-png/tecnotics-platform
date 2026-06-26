@@ -11,11 +11,17 @@ import {
 
 export const site = {
   name: "Tecnotics",
+  url: "https://tecnotics-platform.vercel.app",
   tagline: "El futuro de la tecnologia ya llego a Vallenar.",
   description:
     "Servicio tecnico, soluciones tecnologicas, soporte empresarial, gaming, IA y proyectos arcade en Vallenar y la Provincia del Huasco.",
   location: "Vallenar, Provincia del Huasco",
   address: "Gabriela Mistral 648, Poblacion Hermanos Carrera, Vallenar",
+  streetAddress: "Gabriela Mistral 648, Poblacion Hermanos Carrera",
+  city: "Vallenar",
+  region: "Atacama",
+  postalCode: "",
+  country: "CL",
   mapsUrl:
     "https://www.google.com/maps/search/?api=1&query=Gabriela%20Mistral%20648%2C%20Poblacion%20Hermanos%20Carrera%2C%20Vallenar",
   mapsEmbedUrl:
