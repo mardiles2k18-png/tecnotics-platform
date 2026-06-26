@@ -15,6 +15,11 @@ export const site = {
   description:
     "Servicio tecnico, soluciones tecnologicas, soporte empresarial, gaming, IA y proyectos arcade en Vallenar y la Provincia del Huasco.",
   location: "Vallenar, Provincia del Huasco",
+  address: "Gabriela Mistral 648, Poblacion Hermanos Carrera, Vallenar",
+  mapsUrl:
+    "https://www.google.com/maps/search/?api=1&query=Gabriela%20Mistral%20648%2C%20Poblacion%20Hermanos%20Carrera%2C%20Vallenar",
+  mapsEmbedUrl:
+    "https://www.google.com/maps?q=Gabriela%20Mistral%20648%2C%20Poblacion%20Hermanos%20Carrera%2C%20Vallenar&output=embed",
   phoneLabel: "+56 9 8731 5288",
   whatsappUrl: "https://wa.me/56987315288",
   instagramLabel: "@tecno.tics",
