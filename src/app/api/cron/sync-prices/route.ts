@@ -24,30 +24,25 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "supabase_not_configured" }, { status: 500 });
   }
 
-  try {
-    const products = await syncCatalog();
+  const products = await syncCatalog();
 
-    const { error } = await supabase.from("products").upsert(
-      products.map((product) => ({
-        slug: product.slug,
-        category: product.category,
-        subcategory: product.subcategory,
-        name: product.name,
-        description: product.description,
-        source_price: product.sourcePrice,
-        our_price: product.ourPrice,
-        updated_at: new Date().toISOString()
-      })),
-      { onConflict: "slug" }
-    );
+  const { error } = await supabase.from("products").upsert(
+    products.map((product) => ({
+      slug: product.slug,
+      category: product.category,
+      subcategory: product.subcategory,
+      name: product.name,
+      description: product.description,
+      source_price: product.sourcePrice,
+      our_price: product.ourPrice,
+      updated_at: new Date().toISOString()
+    })),
+    { onConflict: "slug" }
+  );
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ synced: products.length });
-  } catch (err) {
-    const stack = err instanceof Error ? err.stack : String(err);
-    return NextResponse.json({ error: "sync_threw", stack }, { status: 500 });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  return NextResponse.json({ synced: products.length });
 }
