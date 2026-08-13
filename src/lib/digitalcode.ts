@@ -6,6 +6,11 @@ const REQUEST_HEADERS = {
   "User-Agent": "TecnoticsPriceSync/1.0 (+https://tecnotics.cl)"
 };
 
+// DigitalCode miscategorizes some products under the wrong section on their own site.
+const CATEGORY_OVERRIDES: Record<string, "windows" | "office"> = {
+  "office-2024/windows-11-enterprise-ltsc-2024": "windows"
+};
+
 export type SyncedProduct = {
   slug: string;
   category: "windows" | "office";
@@ -99,5 +104,9 @@ export async function syncCatalog(): Promise<SyncedProduct[]> {
   const [windows, office] = await Promise.all([syncWindows(), syncOffice()]);
   const bySlug = new Map<string, SyncedProduct>();
   for (const product of [...windows, ...office]) bySlug.set(product.slug, product);
-  return Array.from(bySlug.values());
+
+  return Array.from(bySlug.values()).map((product) => {
+    const override = CATEGORY_OVERRIDES[product.slug];
+    return override ? { ...product, category: override } : product;
+  });
 }
