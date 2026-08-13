@@ -38,6 +38,7 @@ export const site = {
 export const navItems = [
   { label: "Inicio", href: "/" },
   { label: "Servicios", href: "/servicios" },
+  { label: "Tienda", href: "/tienda" },
   { label: "Galeria", href: "#galeria" },
   { label: "Blog", href: "#blog" },
   { label: "Contacto", href: "#contacto" }
