@@ -1,18 +1,30 @@
-import { Redis } from "@upstash/redis";
+import { createClient, type RedisClientType } from "redis";
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+let client: RedisClientType | null = null;
+
+async function getClient() {
+  if (!process.env.REDIS_URL) return null;
+
+  if (!client) {
+    client = createClient({ url: process.env.REDIS_URL });
+    client.on("error", () => {});
+  }
+  if (!client.isOpen) {
+    await client.connect();
+  }
+  return client;
+}
 
 export async function GET() {
-  const url = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN;
-
-  if (!url || !token) {
+  const redis = await getClient();
+  if (!redis) {
     return NextResponse.json({ count: null, configured: false });
   }
 
-  const redis = new Redis({ url, token });
   const count = await redis.incr("site:visits");
-
   return NextResponse.json({ count, configured: true });
 }
