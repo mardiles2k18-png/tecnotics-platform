@@ -30,7 +30,8 @@ function parseCards(html: string, category: "windows" | "office", dataCatPrefix:
     const dataCat = card.attr("data-cat") ?? "";
     if (!dataCat.startsWith(dataCatPrefix)) return;
 
-    const inStock = card.find(".btn--cart").length > 0;
+    const cartButton = card.find(".btn--cart");
+    const inStock = cartButton.length > 0 && cartButton.attr("disabled") === undefined;
     if (!inStock) return;
 
     const nameLink = card.find(".product-card__name a").first();

@@ -26,7 +26,7 @@ export async function GET(request: Request) {
 
   const products = await syncCatalog();
 
-  const { error } = await supabase.from("products").upsert(
+  const { error: upsertError } = await supabase.from("products").upsert(
     products.map((product) => ({
       slug: product.slug,
       category: product.category,
@@ -40,8 +40,19 @@ export async function GET(request: Request) {
     { onConflict: "slug" }
   );
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (upsertError) {
+    return NextResponse.json({ error: upsertError.message }, { status: 500 });
+  }
+
+  const currentSlugs = products.map((product) => `"${product.slug}"`).join(",");
+  const { error: deleteError } = await supabase
+    .from("products")
+    .delete()
+    .in("category", ["windows", "office"])
+    .not("slug", "in", `(${currentSlugs})`);
+
+  if (deleteError) {
+    return NextResponse.json({ error: deleteError.message }, { status: 500 });
   }
 
   return NextResponse.json({ synced: products.length });

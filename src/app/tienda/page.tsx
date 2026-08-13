@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { AppWindow, ArrowLeft, FileSpreadsheet, KeyRound, ShieldCheck } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { SectionHeading } from "@/components/SectionHeading";
@@ -9,7 +9,7 @@ import { getSupabaseAdmin } from "@/lib/supabase";
 
 export const metadata: Metadata = {
   title: "Tienda",
-  description: "Licencias de Windows y Office con instalacion incluida, en Vallenar."
+  description: "Licencias originales de Windows y Office para Vallenar."
 };
 
 export const dynamic = "force-dynamic";
@@ -42,6 +42,29 @@ const priceFormatter = new Intl.NumberFormat("es-CL", {
   maximumFractionDigits: 0
 });
 
+const categoryIcon = { windows: AppWindow, office: FileSpreadsheet } as const;
+
+function getProductBlurb(product: Product): string {
+  const name = product.name.toLowerCase();
+
+  if (product.category === "windows") {
+    if (name.includes("enterprise")) return "Edicion empresarial: BitLocker, Hyper-V y gestion avanzada de seguridad.";
+    if (name.includes("home")) return "Edicion hogar: funciones esenciales para uso personal.";
+    return "Incluye BitLocker, Hyper-V y herramientas para uso profesional.";
+  }
+
+  if (name.includes("365")) {
+    return "Suscripcion con Word, Excel, PowerPoint, Outlook, OneDrive en la nube y actualizaciones constantes.";
+  }
+  if (name.includes("home & business") || name.includes("home and business")) {
+    return "Word, Excel, PowerPoint y Outlook. Licencia perpetua con derecho a uso comercial.";
+  }
+  if (name.includes("professional plus") || name.includes("standard")) {
+    return "Word, Excel, PowerPoint, Outlook, Publisher y Access en una sola licencia perpetua.";
+  }
+  return "Suite ofimatica: Word, Excel, PowerPoint y mas, licencia perpetua.";
+}
+
 export default async function TiendaPage() {
   const products = await getProducts();
   const windows = products.filter((product) => product.category === "windows");
@@ -61,11 +84,12 @@ export default async function TiendaPage() {
               Tienda Tecnotics
             </p>
             <h1 className="text-4xl font-black leading-tight text-graphite sm:text-5xl">
-              Licencias con instalacion incluida.
+              Licencias originales para tu equipo.
             </h1>
             <p className="mt-5 text-lg leading-8 text-slate-700">
-              Licencia original de Windows u Office mas la instalacion y activacion
-              en tu equipo, coordinada por WhatsApp.
+              Windows incluye la clave de activacion lista para usar (la instalacion o
+              formateo se cotiza aparte). Office incluye instalacion y activacion en tu
+              equipo. Coordinamos todo por WhatsApp.
             </p>
           </div>
         </div>
@@ -82,7 +106,7 @@ export default async function TiendaPage() {
           {windows.length > 0 && (
             <section className="py-20">
               <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <SectionHeading eyebrow="Catalogo" title="Windows" description="Licencias perpetuas de Windows, instaladas y activadas en tu equipo." />
+                <SectionHeading eyebrow="Catalogo" title="Windows" description="Clave de activacion original de Windows para tu equipo." />
                 <ProductGrid products={windows} />
               </div>
             </section>
@@ -105,34 +129,54 @@ export default async function TiendaPage() {
 function ProductGrid({ products }: { products: Product[] }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {products.map((product) => (
-        <article key={product.slug} className="flex flex-col rounded border border-slate-200 bg-white p-6 shadow-sm">
-          <span className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-circuit">
-            {product.subcategory ?? product.category}
-          </span>
-          <h3 className="text-lg font-bold text-graphite">{product.name}</h3>
-          {product.description && (
-            <p className="mt-2 text-sm leading-6 text-slate-600">{product.description}</p>
-          )}
-          <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-slate-700">
-            <ShieldCheck size={16} className="text-signal" />
-            Incluye instalacion y activacion
-          </div>
-          <div className="mt-5 flex items-center justify-between">
-            <span className="text-2xl font-black text-graphite">
-              {priceFormatter.format(product.our_price)}
-            </span>
-            <a
-              href={site.whatsappUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center justify-center rounded bg-circuit px-4 py-2 text-sm font-bold text-graphite transition hover:bg-signal"
-            >
-              Solicitar
-            </a>
-          </div>
-        </article>
-      ))}
+      {products.map((product) => {
+        const CategoryIcon = categoryIcon[product.category];
+        return (
+          <article key={product.slug} className="flex flex-col rounded border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-3 flex items-center gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded bg-circuit text-graphite">
+                <CategoryIcon size={20} />
+              </span>
+              <span className="text-xs font-bold uppercase tracking-[0.12em] text-circuit">
+                {product.subcategory ?? product.category}
+              </span>
+            </div>
+            <h3 className="text-lg font-bold text-graphite">{product.name}</h3>
+            {product.description && (
+              <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                {product.description}
+              </p>
+            )}
+            <p className="mt-2 text-sm leading-6 text-slate-600">{getProductBlurb(product)}</p>
+            <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-slate-700">
+              {product.category === "windows" ? (
+                <>
+                  <KeyRound size={16} className="text-signal" />
+                  Incluye clave de activacion
+                </>
+              ) : (
+                <>
+                  <ShieldCheck size={16} className="text-signal" />
+                  Incluye instalacion y activacion
+                </>
+              )}
+            </div>
+            <div className="mt-5 flex items-center justify-between">
+              <span className="text-2xl font-black text-graphite">
+                {priceFormatter.format(product.our_price)}
+              </span>
+              <a
+                href={site.whatsappUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center rounded bg-circuit px-4 py-2 text-sm font-bold text-graphite transition hover:bg-signal"
+              >
+                Solicitar
+              </a>
+            </div>
+          </article>
+        );
+      })}
     </div>
   );
 }
