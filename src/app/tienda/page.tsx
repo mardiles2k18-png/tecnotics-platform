@@ -44,6 +44,31 @@ const priceFormatter = new Intl.NumberFormat("es-CL", {
 
 const categoryIcon = { windows: AppWindow, office: FileSpreadsheet } as const;
 
+function getFamilyLabel(product: Product): string {
+  const match = product.name.match(/Windows\s*(?:11|10|8\.1)|Office\s*(?:2024|2021|2019|2016|2013|2010)|Microsoft\s*365/i);
+  return match ? match[0] : product.category === "windows" ? "Windows" : "Office";
+}
+
+function getEditionLabel(name: string): string {
+  const n = name.toLowerCase();
+  if (n.includes("enterprise")) return "Enterprise";
+  if (n.includes("professional plus")) return "Professional Plus";
+  if (n.includes("home & business") || n.includes("home and business")) return "Home & Business";
+  if (n.includes("standard")) return "Standard";
+  if (n.includes("professional")) return "Professional";
+  if (n.includes("home")) return "Home";
+  if (n.includes("365")) return "Suscripcion";
+  return "";
+}
+
+function getCoverColorClass(name: string): string {
+  const n = name.toLowerCase();
+  if (n.includes("enterprise")) return "bg-graphite text-white";
+  if (n.includes("365")) return "bg-signal text-graphite";
+  if (n.includes("home") && !n.includes("business")) return "bg-panel text-graphite border border-slate-200";
+  return "bg-circuit text-graphite";
+}
+
 function getProductBlurb(product: Product): string {
   const name = product.name.toLowerCase();
 
@@ -131,16 +156,17 @@ function ProductGrid({ products }: { products: Product[] }) {
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {products.map((product) => {
         const CategoryIcon = categoryIcon[product.category];
+        const edition = getEditionLabel(product.name);
         return (
-          <article key={product.slug} className="flex flex-col rounded border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-3 flex items-center gap-3">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded bg-circuit text-graphite">
-                <CategoryIcon size={20} />
-              </span>
-              <span className="text-xs font-bold uppercase tracking-[0.12em] text-circuit">
-                {product.subcategory ?? product.category}
-              </span>
+          <article key={product.slug} className="flex flex-col overflow-hidden rounded border border-slate-200 bg-white shadow-sm">
+            <div className={`flex h-32 flex-col items-center justify-center gap-1 ${getCoverColorClass(product.name)}`}>
+              <CategoryIcon size={30} />
+              <span className="text-base font-black">{getFamilyLabel(product)}</span>
+              {edition && (
+                <span className="text-xs font-bold uppercase tracking-[0.1em] opacity-80">{edition}</span>
+              )}
             </div>
+            <div className="flex flex-1 flex-col p-6">
             <h3 className="text-lg font-bold text-graphite">{product.name}</h3>
             {product.description && (
               <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -173,6 +199,7 @@ function ProductGrid({ products }: { products: Product[] }) {
               >
                 Solicitar
               </a>
+            </div>
             </div>
           </article>
         );
