@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { MapPin } from "lucide-react";
 import { site } from "@/lib/site";
+import { VisitCounter } from "@/components/VisitCounter";
 
 export function Footer() {
   return (
@@ -36,6 +37,9 @@ export function Footer() {
             <a href={site.facebookUrl} target="_blank" rel="noreferrer" className="hover:text-circuit">
               Facebook {site.facebookLabel}
             </a>
+          </div>
+          <div className="mt-6">
+            <VisitCounter />
           </div>
         </div>
 
