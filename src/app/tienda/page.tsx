@@ -5,7 +5,7 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { SectionHeading } from "@/components/SectionHeading";
 import { site } from "@/lib/site";
-import { getSupabaseAdmin } from "@/lib/supabase";
+import { getDb } from "@/lib/db";
 
 export const metadata: Metadata = {
   title: "Tienda",
@@ -24,16 +24,16 @@ type Product = {
 };
 
 async function getProducts(): Promise<Product[]> {
-  const supabase = getSupabaseAdmin();
-  if (!supabase) return [];
+  const db = getDb();
+  if (!db) return [];
 
-  const { data } = await supabase
-    .from("products")
-    .select("slug, category, subcategory, name, description, our_price")
-    .order("category", { ascending: true })
-    .order("our_price", { ascending: true });
+  const { rows } = await db.query<Product>(
+    `SELECT slug, category, subcategory, name, description, our_price
+     FROM products
+     ORDER BY category ASC, our_price ASC`
+  );
 
-  return data ?? [];
+  return rows;
 }
 
 const priceFormatter = new Intl.NumberFormat("es-CL", {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { syncCatalog } from "@/lib/digitalcode";
-import { getSupabaseAdmin } from "@/lib/supabase";
+import { getDb } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -19,40 +19,55 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const supabase = getSupabaseAdmin();
-  if (!supabase) {
-    return NextResponse.json({ error: "supabase_not_configured" }, { status: 500 });
+  const db = getDb();
+  if (!db) {
+    return NextResponse.json({ error: "database_not_configured" }, { status: 500 });
   }
 
   const products = await syncCatalog();
+  const updatedAt = new Date().toISOString();
 
-  const { error: upsertError } = await supabase.from("products").upsert(
-    products.map((product) => ({
-      slug: product.slug,
-      category: product.category,
-      subcategory: product.subcategory,
-      name: product.name,
-      description: product.description,
-      source_price: product.sourcePrice,
-      our_price: product.ourPrice,
-      updated_at: new Date().toISOString()
-    })),
-    { onConflict: "slug" }
-  );
+  const client = await db.connect();
+  try {
+    await client.query("BEGIN");
 
-  if (upsertError) {
-    return NextResponse.json({ error: upsertError.message }, { status: 500 });
-  }
+    await client.query(
+      `INSERT INTO products (slug, category, subcategory, name, description, source_price, our_price, updated_at)
+       SELECT * FROM UNNEST(
+         $1::text[], $2::text[], $3::text[], $4::text[], $5::text[], $6::int[], $7::int[], $8::timestamptz[]
+       )
+       ON CONFLICT (slug) DO UPDATE SET
+         category = EXCLUDED.category,
+         subcategory = EXCLUDED.subcategory,
+         name = EXCLUDED.name,
+         description = EXCLUDED.description,
+         source_price = EXCLUDED.source_price,
+         our_price = EXCLUDED.our_price,
+         updated_at = EXCLUDED.updated_at`,
+      [
+        products.map((p) => p.slug),
+        products.map((p) => p.category),
+        products.map((p) => p.subcategory),
+        products.map((p) => p.name),
+        products.map((p) => p.description),
+        products.map((p) => p.sourcePrice),
+        products.map((p) => p.ourPrice),
+        products.map(() => updatedAt)
+      ]
+    );
 
-  const currentSlugs = products.map((product) => `"${product.slug}"`).join(",");
-  const { error: deleteError } = await supabase
-    .from("products")
-    .delete()
-    .in("category", ["windows", "office"])
-    .not("slug", "in", `(${currentSlugs})`);
+    await client.query(
+      `DELETE FROM products WHERE category = ANY($1::text[]) AND NOT (slug = ANY($2::text[]))`,
+      [["windows", "office"], products.map((p) => p.slug)]
+    );
 
-  if (deleteError) {
-    return NextResponse.json({ error: deleteError.message }, { status: 500 });
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    const message = error instanceof Error ? error.message : "unknown_error";
+    return NextResponse.json({ error: message }, { status: 500 });
+  } finally {
+    client.release();
   }
 
   return NextResponse.json({ synced: products.length });
