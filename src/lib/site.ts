@@ -32,7 +32,7 @@ export const site = {
   instagramUrl: "https://www.instagram.com/tecno.tics",
   facebookLabel: "Tecnotics",
   facebookUrl: "https://www.facebook.com/tecno.tics.334",
-  email: "contacto@tecnotics.cl"
+  email: "mardiles@tecnotics.cl"
 };
 
 export const navItems = [
