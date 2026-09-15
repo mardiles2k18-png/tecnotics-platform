@@ -11,7 +11,7 @@ import {
 
 export const site = {
   name: "Tecnotics",
-  url: "https://tecnotics-platform.vercel.app",
+  url: "https://tecnotics.cl",
   tagline: "El futuro de la tecnologia ya llego a Vallenar.",
   description:
     "Servicio tecnico, soluciones tecnologicas, soporte empresarial, gaming, IA y proyectos arcade en Vallenar y la Provincia del Huasco.",
