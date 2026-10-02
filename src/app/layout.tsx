@@ -44,10 +44,8 @@ const localBusinessSchema = {
   email: site.email,
   address: {
     "@type": "PostalAddress",
-    streetAddress: site.streetAddress,
     addressLocality: site.city,
     addressRegion: site.region,
-    postalCode: site.postalCode,
     addressCountry: site.country
   },
   areaServed: ["Vallenar", "Provincia del Huasco", "Atacama"],
