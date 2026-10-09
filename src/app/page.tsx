@@ -53,7 +53,7 @@ export default function HomePage() {
           className="object-cover object-center opacity-72"
         />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(17,19,24,0.95)_0%,rgba(17,19,24,0.78)_42%,rgba(17,19,24,0.18)_100%)]" />
-        <div className="relative mx-auto flex min-h-[calc(100svh-65px)] max-w-7xl items-center px-4 py-20 sm:px-6 lg:px-8">
+        <div className="relative mx-auto grid min-h-[calc(100svh-65px)] max-w-7xl items-center gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[1fr_1.05fr] lg:px-8">
           <div className="max-w-2xl">
             <div className="mb-6 inline-flex items-center gap-2 rounded border border-white/18 bg-white/10 px-3 py-2 text-sm text-white/82 backdrop-blur">
               <MapPin size={16} />
@@ -101,6 +101,21 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
+          </div>
+          <div className="overflow-hidden rounded border border-white/20 bg-black shadow-glow">
+            <video
+              className="aspect-video w-full"
+              src="/videos/tecnotics-promo.mp4"
+              poster="/videos/tecnotics-promo-poster.jpg"
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls
+              preload="metadata"
+            >
+              Tu navegador no soporta video HTML5.
+            </video>
           </div>
         </div>
       </section>
