@@ -1,15 +1,17 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
-import { AppWindow, ArrowLeft, FileSpreadsheet, KeyRound, ShieldCheck } from "lucide-react";
+import { AppWindow, ArrowLeft, ArrowRight, FileSpreadsheet, KeyRound, ShieldCheck, Zap } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { SectionHeading } from "@/components/SectionHeading";
+import { monitorSistema } from "@/lib/monitor-sistema";
 import { site } from "@/lib/site";
 import { getDb } from "@/lib/db";
 
 export const metadata: Metadata = {
   title: "Tienda",
-  description: "Licencias originales de Windows y Office para Vallenar."
+  description: "Licencias originales de Windows y Office, y monitores de sistema para tu PC, en Vallenar."
 };
 
 export const dynamic = "force-dynamic";
@@ -117,6 +119,38 @@ export default async function TiendaPage() {
               equipo. Coordinamos todo por WhatsApp.
             </p>
           </div>
+        </div>
+      </section>
+
+      <section className="border-b border-slate-200 bg-white py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <Link
+            href={monitorSistema.path}
+            className="group grid overflow-hidden rounded border border-slate-200 bg-graphite text-white shadow-sm transition hover:border-circuit md:grid-cols-[1.05fr_1fr]"
+          >
+            <div className="relative aspect-[4/3] md:aspect-auto md:min-h-[320px]">
+              <Image
+                src={monitorSistema.image}
+                alt={monitorSistema.name}
+                fill
+                sizes="(min-width: 768px) 55vw, 100vw"
+                className="object-cover transition duration-500 group-hover:scale-105"
+              />
+            </div>
+            <div className="flex flex-col justify-center p-8">
+              <span className="mb-4 inline-flex w-fit items-center gap-2 rounded bg-ember px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-graphite">
+                <Zap size={14} />
+                Nuevo
+              </span>
+              <h2 className="text-3xl font-black leading-tight">{monitorSistema.name}</h2>
+              <p className="mt-2 font-semibold text-signal">{monitorSistema.tagline}</p>
+              <p className="mt-4 text-sm leading-6 text-white/76">{monitorSistema.summary}</p>
+              <span className="mt-6 inline-flex w-fit items-center gap-2 rounded bg-circuit px-5 py-2.5 text-sm font-bold text-graphite transition group-hover:bg-signal">
+                Ver producto
+                <ArrowRight size={16} />
+              </span>
+            </div>
+          </Link>
         </div>
       </section>
 

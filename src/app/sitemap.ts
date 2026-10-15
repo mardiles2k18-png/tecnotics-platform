@@ -14,6 +14,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.8
+    },
+    {
+      url: `${site.url}/tienda`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.9
+    },
+    {
+      url: `${site.url}/tienda/monitor-de-sistema`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.8
     }
   ];
 }
