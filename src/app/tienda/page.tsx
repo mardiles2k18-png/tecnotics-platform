@@ -171,7 +171,7 @@ export default async function TiendaPage() {
 
 function PhysicalGrid({ products }: { products: StoreProduct[] }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="flex flex-wrap justify-center gap-4">
       {products.map((product) => {
         const soldOut = product.stock === 0;
         const waMessage = encodeURIComponent(
@@ -180,8 +180,11 @@ function PhysicalGrid({ products }: { products: StoreProduct[] }) {
             : `Hola Tecnotics, me interesa el ${product.name}. ¿Me das mas informacion?`
         );
         return (
-          <article key={product.slug} className="flex flex-col overflow-hidden rounded border border-slate-200 bg-white shadow-sm">
-            <div className="relative aspect-[4/3] bg-graphite">
+          <article
+            key={product.slug}
+            className="flex w-full flex-col overflow-hidden rounded border border-slate-200 bg-white shadow-sm sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.7rem)]"
+          >
+            <div className={`relative bg-graphite ${product.video ? "aspect-video" : "aspect-[4/3]"}`}>
               {product.image ? (
                 <Image
                   src={product.image}
@@ -189,6 +192,19 @@ function PhysicalGrid({ products }: { products: StoreProduct[] }) {
                   fill
                   sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                   className={`object-cover ${soldOut ? "opacity-60" : ""}`}
+                />
+              ) : null}
+              {product.video ? (
+                <video
+                  className={`absolute inset-0 h-full w-full object-cover motion-reduce:hidden ${soldOut ? "opacity-60" : ""}`}
+                  src={product.video}
+                  poster={product.image ?? undefined}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                  aria-hidden="true"
                 />
               ) : null}
             </div>

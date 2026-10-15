@@ -82,6 +82,14 @@ export default async function ProductFormPage({
         </label>
 
         <label className="grid gap-1 text-sm font-semibold">
+          Video corto para la tarjeta (opcional, ej: /videos/mi-producto.mp4)
+          <input name="video" defaultValue={product?.video ?? ""} className={field} />
+          <span className="text-xs font-normal text-slate-500">
+            Se reproduce en bucle y sin sonido en la tienda; la imagen se usa mientras carga.
+          </span>
+        </label>
+
+        <label className="grid gap-1 text-sm font-semibold">
           Página del producto (opcional, ej: /tienda/monitor-de-sistema)
           <input name="detail_path" defaultValue={product?.detail_path ?? ""} className={field} />
         </label>

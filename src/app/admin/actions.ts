@@ -78,6 +78,7 @@ export async function saveProductAction(form: FormData) {
     description: text(form, "description") || null,
     image: text(form, "image") || null,
     detailPath: text(form, "detail_path") || null,
+    video: text(form, "video") || null,
     active: form.get("active") === "on"
   });
 

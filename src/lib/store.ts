@@ -14,6 +14,7 @@ export type StoreProduct = {
   active: boolean;
   image: string | null;
   detail_path: string | null;
+  video: string | null;
 };
 
 export type Sale = {
@@ -31,7 +32,7 @@ export type Sale = {
 export const LOW_STOCK_THRESHOLD = 3;
 
 const PRODUCT_COLUMNS =
-  "slug, kind, category, name, description, our_price, stock, active, image, detail_path";
+  "slug, kind, category, name, description, our_price, stock, active, image, detail_path, video";
 
 const clpFormatter = new Intl.NumberFormat("es-CL", {
   style: "currency",
@@ -107,6 +108,7 @@ export type ProductInput = {
   description: string | null;
   image: string | null;
   detailPath: string | null;
+  video: string | null;
   active: boolean;
 };
 
@@ -118,9 +120,9 @@ export async function saveProduct(input: ProductInput): Promise<{ ok: true; slug
     const result = await db.query(
       `UPDATE products
        SET name = $2, category = $3, our_price = $4, stock = $5, description = $6,
-           image = $7, detail_path = $8, active = $9, updated_at = now()
+           image = $7, detail_path = $8, active = $9, video = $10, updated_at = now()
        WHERE slug = $1 AND kind = 'fisico'`,
-      [input.slug, input.name, input.category, input.price, input.stock, input.description, input.image, input.detailPath, input.active]
+      [input.slug, input.name, input.category, input.price, input.stock, input.description, input.image, input.detailPath, input.active, input.video]
     );
     return result.rowCount ? { ok: true, slug: input.slug } : { ok: false, error: "Producto no encontrado" };
   }
@@ -128,10 +130,10 @@ export async function saveProduct(input: ProductInput): Promise<{ ok: true; slug
   const slug = slugify(input.name);
   if (!slug) return { ok: false, error: "El nombre no es válido" };
   const result = await db.query(
-    `INSERT INTO products (slug, kind, category, name, description, our_price, stock, image, detail_path, active)
-     VALUES ($1, 'fisico', $2, $3, $4, $5, $6, $7, $8, $9)
+    `INSERT INTO products (slug, kind, category, name, description, our_price, stock, image, detail_path, active, video)
+     VALUES ($1, 'fisico', $2, $3, $4, $5, $6, $7, $8, $9, $10)
      ON CONFLICT (slug) DO NOTHING`,
-    [slug, input.category, input.name, input.description, input.price, input.stock, input.image, input.detailPath, input.active]
+    [slug, input.category, input.name, input.description, input.price, input.stock, input.image, input.detailPath, input.active, input.video]
   );
   return result.rowCount ? { ok: true, slug } : { ok: false, error: "Ya existe un producto con ese nombre" };
 }

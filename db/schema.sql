@@ -6,6 +6,7 @@ ALTER TABLE products ADD COLUMN IF NOT EXISTS stock integer;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS active boolean NOT NULL DEFAULT true;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS image text;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS detail_path text;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS video text;
 ALTER TABLE products ALTER COLUMN source_price DROP NOT NULL;
 
 DO $$
