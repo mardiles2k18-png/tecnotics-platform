@@ -191,12 +191,12 @@ function PhysicalGrid({ products }: { products: StoreProduct[] }) {
                   alt={product.name}
                   fill
                   sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                  className={`object-cover ${soldOut ? "opacity-60" : ""}`}
+                  className="object-cover"
                 />
               ) : null}
               {product.video ? (
                 <video
-                  className={`absolute inset-0 h-full w-full object-cover motion-reduce:hidden ${soldOut ? "opacity-60" : ""}`}
+                  className="absolute inset-0 h-full w-full object-cover motion-reduce:hidden"
                   src={product.video}
                   poster={product.image ?? undefined}
                   autoPlay
@@ -207,6 +207,7 @@ function PhysicalGrid({ products }: { products: StoreProduct[] }) {
                   aria-hidden="true"
                 />
               ) : null}
+              {soldOut ? <div className="absolute inset-0 bg-graphite/45" /> : null}
             </div>
             <div className="flex flex-1 flex-col p-6">
               <div className="mb-3">
