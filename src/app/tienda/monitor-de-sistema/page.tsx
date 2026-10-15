@@ -19,7 +19,11 @@ import {
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { SectionHeading } from "@/components/SectionHeading";
-import { monitorSistema, monitorWhatsappUrl } from "@/lib/monitor-sistema";
+import { StockBadge } from "@/components/StockBadge";
+import { monitorSistema, monitorWhatsappUrl, monitorWaitlistUrl } from "@/lib/monitor-sistema";
+import { getProduct } from "@/lib/store";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: 'Monitor de Sistema 3,5" para PC',
@@ -113,7 +117,12 @@ const faqs = [
   }
 ];
 
-export default function MonitorSistemaPage() {
+export default async function MonitorSistemaPage() {
+  const product = await getProduct(monitorSistema.slug);
+  const price = product?.active ? product.our_price : null;
+  const soldOut = product?.stock === 0;
+  const ctaUrl = soldOut ? monitorWaitlistUrl : monitorWhatsappUrl;
+
   return (
     <main className="bg-white">
       <Header />
@@ -165,20 +174,25 @@ export default function MonitorSistemaPage() {
               </ul>
 
               <div className="mt-8">
-                {monitorSistema.price ? (
-                  <p className="text-4xl font-black">{priceFormatter.format(monitorSistema.price)}</p>
+                {price !== null ? (
+                  <p className="text-4xl font-black">{priceFormatter.format(price)}</p>
                 ) : (
                   <p className="text-lg font-semibold text-white/84">Consulta el precio por WhatsApp</p>
                 )}
+                {product ? (
+                  <div className="mt-3">
+                    <StockBadge stock={product.stock} />
+                  </div>
+                ) : null}
                 <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                   <a
-                    href={monitorWhatsappUrl}
+                    href={ctaUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center justify-center gap-2 rounded bg-circuit px-6 py-3 font-bold text-graphite transition hover:bg-signal"
                   >
                     <MessageCircle size={18} />
-                    Lo quiero
+                    {soldOut ? "Avisame cuando llegue" : "Lo quiero"}
                     <ArrowRight size={18} />
                   </a>
                   <a
@@ -327,13 +341,13 @@ export default function MonitorSistemaPage() {
             Escribenos por WhatsApp, te contamos disponibilidad y coordinamos todo por ahi.
           </p>
           <a
-            href={monitorWhatsappUrl}
+            href={ctaUrl}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center justify-center gap-2 rounded bg-circuit px-7 py-3 font-bold text-graphite transition hover:bg-signal"
           >
             <MessageCircle size={18} />
-            Pedir por WhatsApp
+            {soldOut ? "Avisame cuando llegue" : "Pedir por WhatsApp"}
           </a>
         </div>
       </section>

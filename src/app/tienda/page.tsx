@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { AppWindow, ArrowLeft, ArrowRight, FileSpreadsheet, KeyRound, ShieldCheck, Zap } from "lucide-react";
+import { AppWindow, ArrowLeft, ArrowRight, FileSpreadsheet, KeyRound, ShieldCheck } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { SectionHeading } from "@/components/SectionHeading";
-import { monitorSistema } from "@/lib/monitor-sistema";
+import { StockBadge } from "@/components/StockBadge";
 import { site } from "@/lib/site";
 import { getDb } from "@/lib/db";
+import { listPhysicalProducts, type StoreProduct } from "@/lib/store";
 
 export const metadata: Metadata = {
   title: "Tienda",
-  description: "Licencias originales de Windows y Office, y monitores de sistema para tu PC, en Vallenar."
+  description: "Productos tecnológicos y licencias originales de Windows y Office, en Vallenar."
 };
 
 export const dynamic = "force-dynamic";
@@ -32,6 +33,7 @@ async function getProducts(): Promise<Product[]> {
   const { rows } = await db.query<Product>(
     `SELECT slug, category, subcategory, name, description, our_price
      FROM products
+     WHERE kind = 'digital' AND active
      ORDER BY category ASC, our_price ASC`
   );
 
@@ -93,9 +95,13 @@ function getProductBlurb(product: Product): string {
 }
 
 export default async function TiendaPage() {
-  const products = await getProducts();
+  const [products, physical] = await Promise.all([getProducts(), listPhysicalProducts()]);
   const windows = products.filter((product) => product.category === "windows");
   const office = products.filter((product) => product.category === "office");
+  const physicalGroups = Array.from(new Set(physical.map((product) => product.category))).map((category) => ({
+    category,
+    items: physical.filter((product) => product.category === category)
+  }));
 
   return (
     <main className="bg-white">
@@ -111,9 +117,10 @@ export default async function TiendaPage() {
               Tienda Tecnotics
             </p>
             <h1 className="text-4xl font-black leading-tight text-graphite sm:text-5xl">
-              Licencias originales para tu equipo.
+              Tecnologia y licencias para tu equipo.
             </h1>
             <p className="mt-5 text-lg leading-8 text-slate-700">
+              Productos tecnologicos para tu PC y licencias digitales originales. En las licencias,
               Windows incluye la clave de activacion lista para usar (la instalacion o
               formateo se cotiza aparte). Office incluye instalacion y activacion en tu
               equipo. Coordinamos todo por WhatsApp.
@@ -122,45 +129,19 @@ export default async function TiendaPage() {
         </div>
       </section>
 
-      <section className="border-b border-slate-200 bg-white py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <Link
-            href={monitorSistema.path}
-            className="group grid overflow-hidden rounded border border-slate-200 bg-graphite text-white shadow-sm transition hover:border-circuit md:grid-cols-[1.05fr_1fr]"
-          >
-            <div className="relative aspect-[4/3] md:aspect-auto md:min-h-[320px]">
-              <Image
-                src={monitorSistema.image}
-                alt={monitorSistema.name}
-                fill
-                sizes="(min-width: 768px) 55vw, 100vw"
-                className="object-cover transition duration-500 group-hover:scale-105"
-              />
-            </div>
-            <div className="flex flex-col justify-center p-8">
-              <span className="mb-4 inline-flex w-fit items-center gap-2 rounded bg-ember px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-graphite">
-                <Zap size={14} />
-                Nuevo
-              </span>
-              <h2 className="text-3xl font-black leading-tight">{monitorSistema.name}</h2>
-              <p className="mt-2 font-semibold text-signal">{monitorSistema.tagline}</p>
-              <p className="mt-4 text-sm leading-6 text-white/76">{monitorSistema.summary}</p>
-              {monitorSistema.price ? (
-                <p className="mt-5 text-3xl font-black">{priceFormatter.format(monitorSistema.price)}</p>
-              ) : null}
-              <span className="mt-5 inline-flex w-fit items-center gap-2 rounded bg-circuit px-5 py-2.5 text-sm font-bold text-graphite transition group-hover:bg-signal">
-                Ver producto
-                <ArrowRight size={16} />
-              </span>
-            </div>
-          </Link>
-        </div>
-      </section>
+      {physicalGroups.map(({ category, items }) => (
+        <section key={category} className="border-b border-slate-200 bg-white py-20">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <SectionHeading eyebrow="Productos tecnologicos" title={category} />
+            <PhysicalGrid products={items} />
+          </div>
+        </section>
+      ))}
 
-      {products.length === 0 ? (
+      {products.length === 0 && physical.length === 0 ? (
         <section className="py-20">
           <div className="mx-auto max-w-7xl px-4 text-center text-slate-600 sm:px-6 lg:px-8">
-            Catalogo en preparacion. Escribenos por WhatsApp para cotizar tu licencia.
+            Catalogo en preparacion. Escribenos por WhatsApp para cotizar.
           </div>
         </section>
       ) : (
@@ -168,7 +149,7 @@ export default async function TiendaPage() {
           {windows.length > 0 && (
             <section className="py-20">
               <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <SectionHeading eyebrow="Catalogo" title="Windows" description="Clave de activacion original de Windows para tu equipo." />
+                <SectionHeading eyebrow="Licencias digitales" title="Windows" description="Clave de activacion original de Windows para tu equipo." />
                 <ProductGrid products={windows} />
               </div>
             </section>
@@ -176,7 +157,7 @@ export default async function TiendaPage() {
           {office.length > 0 && (
             <section className="bg-panel py-20">
               <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <SectionHeading eyebrow="Catalogo" title="Office" description="Office y Microsoft 365, instalados y activados en tu equipo." />
+                <SectionHeading eyebrow="Licencias digitales" title="Office" description="Office y Microsoft 365, instalados y activados en tu equipo." />
                 <ProductGrid products={office} />
               </div>
             </section>
@@ -185,6 +166,66 @@ export default async function TiendaPage() {
       )}
       <Footer />
     </main>
+  );
+}
+
+function PhysicalGrid({ products }: { products: StoreProduct[] }) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {products.map((product) => {
+        const soldOut = product.stock === 0;
+        const waMessage = encodeURIComponent(
+          soldOut
+            ? `Hola Tecnotics, quiero que me avisen cuando vuelva el ${product.name}.`
+            : `Hola Tecnotics, me interesa el ${product.name}. ¿Me das mas informacion?`
+        );
+        return (
+          <article key={product.slug} className="flex flex-col overflow-hidden rounded border border-slate-200 bg-white shadow-sm">
+            <div className="relative aspect-[4/3] bg-graphite">
+              {product.image ? (
+                <Image
+                  src={product.image}
+                  alt={product.name}
+                  fill
+                  sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                  className={`object-cover ${soldOut ? "opacity-60" : ""}`}
+                />
+              ) : null}
+            </div>
+            <div className="flex flex-1 flex-col p-6">
+              <div className="mb-3">
+                <StockBadge stock={product.stock} />
+              </div>
+              <h3 className="text-lg font-bold text-graphite">{product.name}</h3>
+              {product.description ? (
+                <p className="mt-2 text-sm leading-6 text-slate-600">{product.description}</p>
+              ) : null}
+              <div className="mt-auto flex items-center justify-between gap-3 pt-5">
+                <span className="text-2xl font-black text-graphite">{priceFormatter.format(product.our_price)}</span>
+                {product.detail_path ? (
+                  <Link
+                    href={product.detail_path}
+                    className="inline-flex items-center justify-center gap-2 rounded bg-circuit px-4 py-2 text-sm font-bold text-graphite transition hover:bg-signal"
+                  >
+                    Ver producto
+                    <ArrowRight size={16} />
+                  </Link>
+                ) : (
+                  <a
+                    href={`${site.whatsappUrl}?text=${waMessage}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center justify-center rounded bg-circuit px-4 py-2 text-sm font-bold text-graphite transition hover:bg-signal"
+                  >
+                    {soldOut ? "Avisame" : "Solicitar"}
+                  </a>
+                )}
+              </div>
+            </div>
+          </article>
+        );
+      })}
+    </div>
   );
 }
 

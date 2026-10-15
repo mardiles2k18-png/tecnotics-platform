@@ -43,7 +43,8 @@ export async function GET(request: Request) {
          description = EXCLUDED.description,
          source_price = EXCLUDED.source_price,
          our_price = EXCLUDED.our_price,
-         updated_at = EXCLUDED.updated_at`,
+         updated_at = EXCLUDED.updated_at
+       WHERE products.kind = 'digital'`,
       [
         products.map((p) => p.slug),
         products.map((p) => p.category),
@@ -57,7 +58,8 @@ export async function GET(request: Request) {
     );
 
     await client.query(
-      `DELETE FROM products WHERE category = ANY($1::text[]) AND NOT (slug = ANY($2::text[]))`,
+      `DELETE FROM products
+       WHERE kind = 'digital' AND category = ANY($1::text[]) AND NOT (slug = ANY($2::text[]))`,
       [["windows", "office"], products.map((p) => p.slug)]
     );
 
