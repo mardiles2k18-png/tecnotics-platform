@@ -8,7 +8,7 @@ export const monitorSistema = {
   summary:
     "Una pantalla de 3,5 pulgadas que muestra el estado de tu computador con la app Tecnotics: procesador, tarjeta grafica, memoria, disco, red y temperaturas, sin ocupar tu pantalla principal.",
   // Precio en CLP. Con null se muestra "Consulta el precio por WhatsApp".
-  price: null as number | null,
+  price: 29990 as number | null,
   image: "/images/products/monitor-sistema/interfaz-tecnotics.jpg",
   video: "/videos/monitor-sistema.mp4",
   poster: "/videos/monitor-sistema-poster.jpg"

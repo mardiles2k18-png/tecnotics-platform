@@ -145,7 +145,10 @@ export default async function TiendaPage() {
               <h2 className="text-3xl font-black leading-tight">{monitorSistema.name}</h2>
               <p className="mt-2 font-semibold text-signal">{monitorSistema.tagline}</p>
               <p className="mt-4 text-sm leading-6 text-white/76">{monitorSistema.summary}</p>
-              <span className="mt-6 inline-flex w-fit items-center gap-2 rounded bg-circuit px-5 py-2.5 text-sm font-bold text-graphite transition group-hover:bg-signal">
+              {monitorSistema.price ? (
+                <p className="mt-5 text-3xl font-black">{priceFormatter.format(monitorSistema.price)}</p>
+              ) : null}
+              <span className="mt-5 inline-flex w-fit items-center gap-2 rounded bg-circuit px-5 py-2.5 text-sm font-bold text-graphite transition group-hover:bg-signal">
                 Ver producto
                 <ArrowRight size={16} />
               </span>
