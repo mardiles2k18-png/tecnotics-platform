@@ -25,6 +25,10 @@ namespace VolumeMixer
         private List<VolumeRow> _ordered = new List<VolumeRow>();
         private int _selected;
         private int _anchorBottom;
+        private int _anchorTop;
+        private bool _anchorAbove;
+        private Rectangle _anchorRect;
+        private bool _passive;
         private Rectangle _area;
 
         public MixerForm(AudioService audio, Settings settings)
@@ -50,7 +54,20 @@ namespace VolumeMixer
             Controls.Add(_footer);
 
             _refreshTimer.Tick += (s, e) => Rebuild();
-            _meterTimer.Tick += (s, e) => { foreach (var r in _ordered) r.UpdatePeak(); };
+            _meterTimer.Tick += (s, e) =>
+            {
+                foreach (var r in _ordered) r.UpdatePeak();
+                // En modo pasivo no hay evento Deactivate: se cierra al hacer clic fuera.
+                if (_passive && Native.AnyMouseButtonDown())
+                {
+                    var p = Cursor.Position;
+                    if (!Bounds.Contains(p) && !_anchorRect.Contains(p))
+                    {
+                        LastHiddenUtc = DateTime.UtcNow;
+                        HideMixer();
+                    }
+                }
+            };
         }
 
         /// <summary>Momento en que se oculto por perder el foco (para no reabrir con el mismo clic).</summary>
@@ -73,25 +90,62 @@ namespace VolumeMixer
         {
             base.OnHandleCreated(e);
             Native.RoundCorners(Handle);
+            Native.SetNoActivate(Handle, _passive);
         }
 
-        public void Toggle()
+        protected override void WndProc(ref Message m)
+        {
+            if (m.Msg == 0x21 /* WM_MOUSEACTIVATE */ && _passive)
+            {
+                m.Result = (IntPtr)3; // MA_NOACTIVATE
+                return;
+            }
+            base.WndProc(ref m);
+        }
+
+        protected override bool ShowWithoutActivation => _passive;
+
+        public void Toggle(bool passive)
         {
             if (Visible) HideMixer();
-            else ShowMixer();
+            else ShowMixer(null, passive);
         }
 
-        public void ShowMixer()
+        /// <summary>
+        /// Muestra el mezclador junto a <paramref name="anchor"/> (p. ej. el boton flotante) o, sin ancla,
+        /// en la esquina inferior derecha de la pantalla del mouse. En modo pasivo la ventana no toma
+        /// el foco: el juego sigue recibiendo el teclado mientras se ajusta el volumen con el mouse.
+        /// </summary>
+        public void ShowMixer(Rectangle? anchor = null, bool passive = false)
         {
-            _area = Native.WorkingAreaAtCursor();
+            var gap = (int)(12 * Dpi);
             Width = (int)(WidthDip * Dpi);
-            Left = _area.Right - Width - (int)(12 * Dpi);
-            _anchorBottom = _area.Bottom - (int)(12 * Dpi);
+            if (anchor is Rectangle a)
+            {
+                _anchorRect = a;
+                _area = Screen.FromRectangle(a).WorkingArea;
+                Left = Math.Max(_area.Left + gap, Math.Min(a.Right - Width, _area.Right - Width - gap));
+                // Arriba del boton si esta en la mitad inferior de la pantalla; si no, debajo.
+                _anchorAbove = a.Top + a.Height / 2 > _area.Top + _area.Height / 2;
+                _anchorBottom = a.Top - gap / 2;
+                _anchorTop = a.Bottom + gap / 2;
+            }
+            else
+            {
+                _anchorRect = Rectangle.Empty;
+                _area = Native.WorkingAreaAtCursor();
+                Left = _area.Right - Width - gap;
+                _anchorAbove = true;
+                _anchorBottom = _area.Bottom - gap;
+            }
+
+            _passive = passive;
+            if (IsHandleCreated) Native.SetNoActivate(Handle, passive);
             _selected = 0;
             Rebuild();
 
             Show();
-            Activate();
+            if (!passive) Activate();
             _refreshTimer.Start();
             _meterTimer.Start();
         }
@@ -163,12 +217,15 @@ namespace VolumeMixer
             var scroll = contentH > listH;
 
             Height = headerH + listH + footerH;
-            Top = _anchorBottom - Height;
+            var top = _anchorAbove ? _anchorBottom - Height : _anchorTop;
+            Top = Math.Max(_area.Top, Math.Min(top, _area.Bottom - Height));
 
             _header.SetBounds((int)(18 * s), 0, Width - (int)(36 * s), headerH);
             _list.SetBounds(0, headerH, Width, listH);
             _footer.SetBounds((int)(18 * s), headerH + listH, Width - (int)(36 * s), footerH);
-            _footer.Text = $"Rueda: ±{_settings.StepPercent}%   Clic der.: silenciar   ↑↓←→ / M";
+            _footer.Text = _passive
+                ? $"Rueda: ±{_settings.StepPercent}%   Clic der.: silenciar   Clic fuera: cerrar"
+                : $"Rueda: ±{_settings.StepPercent}%   Clic der.: silenciar   ↑↓←→ / M";
 
             var rowW = Width - (scroll ? SystemInformation.VerticalScrollBarWidth : 0);
             var y = _list.AutoScrollPosition.Y;

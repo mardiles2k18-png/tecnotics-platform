@@ -18,6 +18,8 @@ namespace VolumeMixer
         private readonly NotifyIcon _tray;
         private readonly HotkeyWindow _hotkeys = new HotkeyWindow();
         private readonly ToolStripMenuItem _autostartItem;
+        private readonly ToolStripMenuItem _buttonItem;
+        private readonly FloatingButton _button;
         private readonly FileSystemWatcher _watcher;
         private readonly Timer _reloadDebounce = new Timer { Interval = 400 };
         private Settings _settings;
@@ -36,6 +38,8 @@ namespace VolumeMixer
             menu.Items.Add("Abrir mezclador", null, (s, e) => _mixer.ShowMixer()).Font = Theme.TitleFont;
             menu.Items.Add("Ver atajos de teclado", null, (s, e) => ShowHotkeyHelp());
             menu.Items.Add("Editar configuración", null, (s, e) => OpenSettingsFile());
+            _buttonItem = new ToolStripMenuItem("Botón flotante", null, (s, e) => SetButtonVisible(!_button.Visible));
+            menu.Items.Add(_buttonItem);
             menu.Items.Add(_autostartItem);
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Salir", null, (s, e) => ExitThread());
@@ -52,8 +56,17 @@ namespace VolumeMixer
                 if (e.Button != MouseButtons.Left) return;
                 // El clic en la bandeja desactiva primero el mezclador: no lo reabrimos con el mismo clic.
                 if ((DateTime.UtcNow - _mixer.LastHiddenUtc).TotalMilliseconds < 300) return;
-                _mixer.Toggle();
+                _mixer.Toggle(passive: false);
             };
+
+            _button = new FloatingButton(menu);
+            _button.Pressed += (s, e) =>
+            {
+                if ((DateTime.UtcNow - _mixer.LastHiddenUtc).TotalMilliseconds < 300) return;
+                if (_mixer.Visible) _mixer.HideMixer();
+                else _mixer.ShowMixer(_button.Bounds, passive: true);
+            };
+            SetButtonVisible(IsButtonEnabled());
 
             _hotkeys.Pressed += OnHotkey;
             var failed = RegisterHotkeys();
@@ -110,7 +123,8 @@ namespace VolumeMixer
                 var step = _settings.StepPercent;
                 switch ((HotkeyAction)id)
                 {
-                    case HotkeyAction.OpenMixer: _mixer.Toggle(); break;
+                    // Sin tomar el foco: abrir el mezclador con el atajo no saca al juego de primer plano.
+                    case HotkeyAction.OpenMixer: _mixer.Toggle(passive: true); break;
                     case HotkeyAction.FocusUp: AdjustApp(WindowHelper.ForegroundProcess(out var h1), h1, step, false); break;
                     case HotkeyAction.FocusDown: AdjustApp(WindowHelper.ForegroundProcess(out var h2), h2, -step, false); break;
                     case HotkeyAction.FocusMute: AdjustApp(WindowHelper.ForegroundProcess(out var h3), h3, 0, true); break;
@@ -170,7 +184,9 @@ namespace VolumeMixer
                 .Select(p => $"{p.Value,-26}  {Settings.Describe(p.Key)}");
             MessageBox.Show(
                 string.Join("\n", lines) +
-                "\n\nEn el mezclador:\n" +
+                "\n\nBotón flotante: arrástralo a cualquier pantalla; clic para abrir el mezclador ahí\n" +
+                "(no le quita el foco al juego). Clic derecho: este menú.\n" +
+                "\nEn el mezclador:\n" +
                 $"  Rueda del mouse sobre una fila: ±{_settings.StepPercent}% (Shift: ±1%)\n" +
                 "  Clic derecho o clic en el icono: silenciar\n" +
                 "  Clic con la rueda: volumen al 100%\n" +
@@ -181,6 +197,25 @@ namespace VolumeMixer
         private static void OpenSettingsFile()
         {
             try { Process.Start("notepad.exe", "\"" + Settings.FilePath + "\""); }
+            catch (Exception ex) { Log.Error(ex); }
+        }
+
+        private static bool IsButtonEnabled()
+        {
+            using (var key = Registry.CurrentUser.OpenSubKey(@"Software\TecnoticsVolumeMixer"))
+                return !(key?.GetValue("ShowButton") is int v) || v != 0;
+        }
+
+        private void SetButtonVisible(bool visible)
+        {
+            if (visible) _button.Show();
+            else _button.Hide();
+            _buttonItem.Checked = visible;
+            try
+            {
+                using (var key = Registry.CurrentUser.CreateSubKey(@"Software\TecnoticsVolumeMixer"))
+                    key.SetValue("ShowButton", visible ? 1 : 0);
+            }
             catch (Exception ex) { Log.Error(ex); }
         }
 
@@ -208,6 +243,7 @@ namespace VolumeMixer
             _tray.Visible = false;
             _tray.Dispose();
             _mixer.Dispose();
+            _button.Dispose();
             _osd.Dispose();
             base.ExitThreadCore();
         }

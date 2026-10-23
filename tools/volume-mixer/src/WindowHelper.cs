@@ -90,6 +90,26 @@ namespace VolumeMixer
             catch (EntryPointNotFoundException) { }
         }
 
+        [DllImport("user32.dll")]
+        private static extern int GetWindowLong(IntPtr hwnd, int index);
+
+        [DllImport("user32.dll")]
+        private static extern int SetWindowLong(IntPtr hwnd, int index, int value);
+
+        [DllImport("user32.dll")]
+        private static extern short GetAsyncKeyState(int vk);
+
+        /// <summary>Activa o quita WS_EX_NOACTIVATE: la ventana se puede usar sin quitarle el foco a otra.</summary>
+        public static void SetNoActivate(IntPtr hwnd, bool noActivate)
+        {
+            const int GWL_EXSTYLE = -20, WS_EX_NOACTIVATE = 0x08000000;
+            var style = GetWindowLong(hwnd, GWL_EXSTYLE);
+            SetWindowLong(hwnd, GWL_EXSTYLE, noActivate ? style | WS_EX_NOACTIVATE : style & ~WS_EX_NOACTIVATE);
+        }
+
+        public static bool AnyMouseButtonDown() =>
+            (GetAsyncKeyState(0x01) & 0x8000) != 0 || (GetAsyncKeyState(0x02) & 0x8000) != 0 || (GetAsyncKeyState(0x04) & 0x8000) != 0;
+
         public static Screen ScreenOf(IntPtr hwnd) =>
             hwnd != IntPtr.Zero ? Screen.FromHandle(hwnd) : Screen.FromPoint(Cursor.Position);
 

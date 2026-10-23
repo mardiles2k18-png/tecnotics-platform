@@ -22,7 +22,9 @@ namespace VolumeMixer
         public VolumeRow()
         {
             SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint |
-                     ControlStyles.UserPaint | ControlStyles.ResizeRedraw | ControlStyles.Selectable, true);
+                     ControlStyles.UserPaint | ControlStyles.ResizeRedraw, true);
+            // Sin ControlStyles.Selectable: tomar el foco activaria la ventana y le quitaria el teclado al juego.
+            SetStyle(ControlStyles.Selectable, false);
             BackColor = Theme.Background;
             Cursor = Cursors.Hand;
         }
