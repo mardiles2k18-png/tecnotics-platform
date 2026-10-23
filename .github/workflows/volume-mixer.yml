@@ -1,0 +1,24 @@
+name: Build Volume Mixer
+
+on:
+  push:
+    paths:
+      - "tools/volume-mixer/**"
+      - ".github/workflows/volume-mixer.yml"
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Build
+        working-directory: tools/volume-mixer
+        run: dotnet build -c Release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VolumeMixer
+          path: tools/volume-mixer/bin/Release/net48/VolumeMixer.exe
