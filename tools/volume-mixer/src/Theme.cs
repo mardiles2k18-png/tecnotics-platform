@@ -43,6 +43,14 @@ namespace VolumeMixer
         public static readonly Image Speaker = Draw(DrawSpeaker);
         public static readonly Image Bell = Draw(DrawBell);
         public static readonly Image App = Draw(DrawApp);
+        public static readonly Image Drive = Draw(DrawDrive);
+        public static readonly Image Warning = Draw(DrawWarning);
+        public static readonly Image WifiOff = Draw(g => DrawWifi(g, 0, true));
+        public static readonly Image WifiDisconnected = Draw(g => DrawWifi(g, 0, false));
+        private static readonly Image[] WifiBars = { Draw(g => DrawWifi(g, 1, false)), Draw(g => DrawWifi(g, 2, false)), Draw(g => DrawWifi(g, 3, false)), Draw(g => DrawWifi(g, 4, false)) };
+
+        /// <summary>Icono de Wi‑Fi con 1 a 4 barras.</summary>
+        public static Image Wifi(int bars) => WifiBars[Math.Max(1, Math.Min(4, bars)) - 1];
 
         public static Icon AppIcon
         {
@@ -93,6 +101,48 @@ namespace VolumeMixer
                 g.FillPath(b, path);
             using (var b = new SolidBrush(Theme.Accent))
                 g.FillRectangle(b, 3, 5, 26, 5);
+        }
+    
+        private static void DrawDrive(Graphics g)
+        {
+            using (var b = new SolidBrush(Theme.Text))
+            using (var path = Theme.RoundedRect(new RectangleF(3, 9, 26, 14), 3))
+                g.FillPath(b, path);
+            using (var b = new SolidBrush(Theme.Background))
+                g.FillRectangle(b, 6, 15, 12, 2);
+            using (var b = new SolidBrush(Theme.Meter))
+                g.FillEllipse(b, 22, 14, 4, 4);
+        }
+
+        private static void DrawWarning(Graphics g)
+        {
+            using (var b = new SolidBrush(Color.FromArgb(255, 196, 0)))
+                g.FillPolygon(b, new[] { new PointF(16, 3), new PointF(30, 28), new PointF(2, 28) });
+            using (var b = new SolidBrush(Theme.Background))
+            {
+                g.FillRectangle(b, 14.5f, 11, 3, 10);
+                g.FillEllipse(b, 14.3f, 22.5f, 3.4f, 3.4f);
+            }
+        }
+
+        private static void DrawWifi(Graphics g, int bars, bool off)
+        {
+            const float cx = 16, cy = 26;
+            using (var on = new SolidBrush(off ? Theme.SubText : Theme.Text))
+            using (var dim = new SolidBrush(Theme.Track))
+                g.FillEllipse(bars >= 1 ? on : dim, cx - 2.5f, cy - 2.5f, 5, 5);
+            float[] radii = { 9, 15, 21 };
+            for (var i = 0; i < radii.Length; i++)
+            {
+                var r = radii[i];
+                using (var p = new Pen(!off && bars >= i + 2 ? Theme.Text : Theme.Track, 3.2f) { StartCap = LineCap.Round, EndCap = LineCap.Round })
+                    g.DrawArc(p, cx - r, cy - r, r * 2, r * 2, 225, 90);
+            }
+            if (off)
+            {
+                using (var p = new Pen(Theme.Danger, 2.6f) { StartCap = LineCap.Round, EndCap = LineCap.Round })
+                    g.DrawLine(p, 5, 5, 27, 27);
+            }
         }
     }
 }

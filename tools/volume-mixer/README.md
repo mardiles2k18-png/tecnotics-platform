@@ -1,8 +1,12 @@
-# Mezclador de volumen (Windows)
+# Mezclador de volumen y panel rápido (Windows)
 
 Controla el volumen de cada programa sin abrir el mezclador de Windows. Pensado para
 el caso típico: una película en una pantalla y un juego en la otra, y ajustar cada uno
 en un segundo.
+
+Como la pantalla secundaria no tiene los iconos de la bandeja, el panel también trae
+**Discos** (expulsar USB y discos externos) y **Wi‑Fi** (ver la conexión, conectarse,
+activar o desactivar).
 
 - **Un solo `.exe` de ~90 KB**, sin instalar nada (usa .NET Framework 4.8, que ya viene en Windows 10/11).
 - Vive en la **bandeja del sistema** (junto al reloj) y en un **botón flotante** que puedes dejar
@@ -19,7 +23,8 @@ en un segundo.
 Al abrir la app aparece un botón redondo con un parlante en la esquina inferior derecha de la
 pantalla secundaria. Puedes **arrastrarlo** donde quieras (recuerda la posición).
 
-- **Clic**: abre el mezclador junto al botón. Se cierra con otro clic en el botón o haciendo clic fuera.
+- El botón muestra el parlante y, al lado, el estado del Wi‑Fi (tachado = apagado, gris = sin conexión).
+- **Clic**: abre el panel junto al botón. Se cierra con otro clic en el botón o haciendo clic fuera.
 - **Clic derecho**: menú (ocultar el botón, configuración, salir…).
 - Si lo ocultas, se vuelve a mostrar desde el menú del icono de la bandeja → **Botón flotante**.
 
@@ -43,6 +48,26 @@ En el mezclador (clic en el icono de la bandeja o `Ctrl+Alt+V`):
 - Teclado (solo si lo abriste desde la bandeja, porque es el único modo en que toma el foco): `↑` `↓` eligen fila, `←` `→` ajustan, `M` silencia, `1`–`9` = 10–90 %, `0` = 100 %, `Esc` cierra.
 - La barra verde bajo cada app indica si está sonando en ese momento.
 - Se muestra cada dispositivo de salida (p. ej. parlantes y el HDMI del proyector/TV) con sus apps.
+
+### Pestaña Discos
+
+Lista las memorias USB, discos externos y tarjetas SD con su nombre, letra y espacio libre.
+**Expulsar** hace lo mismo que "Quitar hardware de forma segura": cuando aparece
+"Ya puedes desconectar", se puede retirar. Si un programa está usando el disco, el panel lo avisa
+y el disco sigue conectado.
+
+### Pestaña Wi‑Fi
+
+- Arriba: la red conectada y su señal, con el botón **Desactivar** / **Activar** el Wi‑Fi.
+- Debajo: las redes cercanas. Clic en una red guardada para conectarte; en la conectada, para desconectarte.
+- Red nueva con contraseña: se abre una ventana para escribirla (esta ventana sí toma el teclado).
+  Si la contraseña no funciona, no se guarda.
+- Redes de empresa/universidad (con usuario): se abre la configuración de Windows.
+- Si aparece **"Windows oculta las redes cercanas"**: Windows 11 exige permiso de ubicación para
+  ver la lista de redes. El botón **Abrir** lleva a *Privacidad y seguridad → Ubicación*: activa
+  *Servicios de ubicación* y *Permitir que las aplicaciones de escritorio accedan a tu ubicación*.
+
+`Ctrl+Tab` cambia de pestaña cuando el panel tiene el foco.
 
 ## Configuración
 

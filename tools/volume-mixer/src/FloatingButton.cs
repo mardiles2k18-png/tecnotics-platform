@@ -21,6 +21,7 @@ namespace VolumeMixer
         private bool _pressed;
         private bool _dragging;
         private bool _hover;
+        private Image _badge;
 
         public FloatingButton(ContextMenuStrip menu)
         {
@@ -41,6 +42,14 @@ namespace VolumeMixer
                 Region = new Region(path);
             }
             Location = LoadPosition(size);
+        }
+
+        /// <summary>Icono pequeno en la esquina (estado del Wi‑Fi); null para no mostrar nada.</summary>
+        public void SetWifi(Image badge)
+        {
+            if (_badge == badge) return;
+            _badge = badge;
+            Invalidate();
         }
 
         /// <summary>Clic izquierdo sin arrastrar.</summary>
@@ -111,9 +120,20 @@ namespace VolumeMixer
             g.Clear(_hover ? Theme.Hover : Theme.Background);
             using (var p = new Pen(_hover ? Theme.Accent : Theme.Border, 2))
                 g.DrawEllipse(p, 1, 1, Width - 3, Height - 3);
-            var icon = (int)(Width * 0.6);
             g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-            g.DrawImage(Icons.Speaker, (Width - icon) / 2, (Height - icon) / 2, icon, icon);
+            if (_badge == null)
+            {
+                var icon = (int)(Width * 0.6);
+                g.DrawImage(Icons.Speaker, (Width - icon) / 2, (Height - icon) / 2, icon, icon);
+            }
+            else
+            {
+                // Parlante a la izquierda y Wi‑Fi a la derecha, ambos dentro del circulo.
+                var icon = (int)(Width * 0.42);
+                var y = (Height - icon) / 2;
+                g.DrawImage(Icons.Speaker, Width / 2 - icon + 2, y, icon, icon);
+                g.DrawImage(_badge, Width / 2 - 1, y, icon, icon);
+            }
         }
 
         private void SavePosition()

@@ -15,6 +15,8 @@ namespace VolumeMixer
         private const string RunValue = "TecnoticsVolumeMixer";
 
         private readonly AudioService _audio = new AudioService();
+        private readonly WifiService _wifi = new WifiService();
+        private readonly Timer _wifiBadgeTimer = new Timer { Interval = 5000 };
         private readonly NotifyIcon _tray;
         private readonly HotkeyWindow _hotkeys = new HotkeyWindow();
         private readonly ToolStripMenuItem _autostartItem;
@@ -29,13 +31,13 @@ namespace VolumeMixer
         public TrayApp()
         {
             _settings = Settings.Load();
-            _mixer = new MixerForm(_audio, _settings);
+            _mixer = CreatePanel();
             _osd = new OsdForm();
             _ = _osd.Handle; // crea la ventana ya, para poder recibir eventos de otros hilos via BeginInvoke
 
             _autostartItem = new ToolStripMenuItem("Iniciar con Windows", null, (s, e) => ToggleAutostart()) { Checked = IsAutostartEnabled() };
             var menu = new ContextMenuStrip();
-            menu.Items.Add("Abrir mezclador", null, (s, e) => _mixer.ShowMixer()).Font = Theme.TitleFont;
+            menu.Items.Add("Abrir panel", null, (s, e) => _mixer.ShowMixer()).Font = Theme.TitleFont;
             menu.Items.Add("Ver atajos de teclado", null, (s, e) => ShowHotkeyHelp());
             menu.Items.Add("Editar configuración", null, (s, e) => OpenSettingsFile());
             _buttonItem = new ToolStripMenuItem("Botón flotante", null, (s, e) => SetButtonVisible(!_button.Visible));
@@ -67,6 +69,9 @@ namespace VolumeMixer
                 else _mixer.ShowMixer(_button.Bounds, passive: true);
             };
             SetButtonVisible(IsButtonEnabled());
+            _wifiBadgeTimer.Tick += (s, e) => UpdateWifiBadge();
+            _wifiBadgeTimer.Start();
+            UpdateWifiBadge();
 
             _hotkeys.Pressed += OnHotkey;
             var failed = RegisterHotkeys();
@@ -85,6 +90,22 @@ namespace VolumeMixer
                     ? $"{_settings.Hotkeys[HotkeyAction.OpenMixer]} abre el mezclador.\n{_settings.Hotkeys[HotkeyAction.FocusUp]} / {_settings.Hotkeys[HotkeyAction.FocusDown]} cambian el volumen de la app activa."
                     : "Algunos atajos ya los usa otro programa: " + string.Join(", ", failed),
                 failed.Count == 0 ? ToolTipIcon.Info : ToolTipIcon.Warning);
+        }
+
+        private MixerForm CreatePanel() =>
+            new MixerForm(_audio, _wifi, _settings, (title, icon, detail, screen) => _osd.ShowMessage(title, icon, detail, screen));
+
+        /// <summary>Muestra el estado del Wi‑Fi en el boton flotante.</summary>
+        private void UpdateWifiBadge()
+        {
+            if (!_button.Visible) return;
+            try
+            {
+                var st = _wifi.GetStatus(includeNetworks: false);
+                if (!st.HasAdapter) _button.SetWifi(null);
+                else _button.SetWifi(!st.RadioOn ? Icons.WifiOff : st.Connected ? Icons.Wifi(4) : Icons.WifiDisconnected);
+            }
+            catch (Exception ex) { Log.Error(ex); }
         }
 
         private List<string> RegisterHotkeys()
@@ -107,7 +128,7 @@ namespace VolumeMixer
             _settings = Settings.Load();
             var wasVisible = _mixer.Visible;
             _mixer.Dispose();
-            _mixer = new MixerForm(_audio, _settings);
+            _mixer = CreatePanel();
             if (wasVisible) _mixer.ShowMixer();
 
             var failed = RegisterHotkeys();
@@ -244,6 +265,8 @@ namespace VolumeMixer
             _tray.Dispose();
             _mixer.Dispose();
             _button.Dispose();
+            _wifiBadgeTimer.Dispose();
+            _wifi.Dispose();
             _osd.Dispose();
             base.ExitThreadCore();
         }
