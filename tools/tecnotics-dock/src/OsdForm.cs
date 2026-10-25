@@ -3,7 +3,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
-namespace VolumeMixer
+namespace TecnoticsDock
 {
     /// <summary>
     /// Indicador en pantalla que aparece al usar un atajo: muestra la app y su volumen

@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace VolumeMixer
+namespace TecnoticsDock
 {
     /// <summary>
     /// Panel rapido con tres pestanas: volumen por aplicacion, discos externos y Wi‑Fi.
@@ -24,6 +24,7 @@ namespace VolumeMixer
         private readonly Settings _settings;
         private readonly Action<string, Image, string, Screen> _notify;
         private readonly Panel _list = new Panel { AutoScroll = true, BackColor = Theme.Background };
+        private readonly BrandHeader _brand = new BrandHeader();
         private readonly TabBar _tabs = new TabBar("Volumen", "Discos", "Wi‑Fi", "Apps");
         private readonly Label _footer = new Label { ForeColor = Theme.SubText, Font = Theme.SmallFont, BackColor = Theme.Background };
         private readonly Timer _refreshTimer = new Timer { Interval = 1000 };
@@ -59,6 +60,8 @@ namespace VolumeMixer
         // Apps
         private List<RunningApp> _apps = new List<RunningApp>();
         private readonly Dictionary<string, DateTime> _closeRequested = new Dictionary<string, DateTime>();
+        private readonly HashSet<string> _restarting = new HashSet<string>();
+        private bool _menuOpen;
 
         public MixerForm(AudioService audio, WifiService wifi, Settings settings, Action<string, Image, string, Screen> notify)
         {
@@ -67,7 +70,7 @@ namespace VolumeMixer
             _settings = settings;
             _notify = notify;
 
-            Text = "Panel rápido";
+            Text = AppInfo.Name;
             FormBorderStyle = FormBorderStyle.None;
             ShowInTaskbar = false;
             TopMost = true;
@@ -79,6 +82,7 @@ namespace VolumeMixer
 
             _footer.TextAlign = ContentAlignment.MiddleLeft;
             Controls.Add(_list);
+            Controls.Add(_brand);
             Controls.Add(_tabs);
             Controls.Add(_footer);
 
@@ -93,7 +97,7 @@ namespace VolumeMixer
             {
                 foreach (var r in _volumeRows) r.UpdatePeak();
                 // En modo pasivo no hay evento Deactivate: se cierra al hacer clic fuera.
-                if (_passive && Native.AnyMouseButtonDown())
+                if (_passive && !_menuOpen && Native.AnyMouseButtonDown())
                 {
                     var p = Cursor.Position;
                     if (!Bounds.Contains(p) && !_anchorRect.Contains(p))
@@ -393,22 +397,84 @@ namespace VolumeMixer
 
                 var row = Row<ActionRow>(app.Key, r =>
                 {
-                    // Solo el boton cierra: un clic por error en la fila no debe cerrar nada.
+                    // Solo los botones actuan: un clic por error en la fila no debe cerrar nada.
                     r.RowClickable = false;
-                    r.ButtonClick += (s, e) => CloseClicked((string)((Control)s).Tag);
+                    r.ButtonClick += (s, e) => OpenClicked((string)((Control)s).Tag);
+                    r.Button2Click += (s, e) => CloseClicked((string)((Control)s).Tag);
+                    r.RightClick += (s, e) => ShowAppMenu((string)((Control)s).Tag);
                 });
-                if (_closeRequested.TryGetValue(app.Key, out var since) && (DateTime.UtcNow - since).TotalSeconds >= 3)
+                var open = app.HasWindow ? "Mostrar" : "Abrir";
+                if (_restarting.Contains(app.Key))
                 {
-                    row.Set(app.Icon, app.Title, "No se cerró. Forzar puede perder lo no guardado", "Forzar", Theme.Danger);
+                    row.Set(app.Icon, app.Title, "Reiniciando…", open, null, false, "Cerrar", true);
+                    row.Busy = true;
+                }
+                else if (_closeRequested.TryGetValue(app.Key, out var since) && (DateTime.UtcNow - since).TotalSeconds >= 3)
+                {
+                    row.Set(app.Icon, app.Title, "No se cerró. Forzar puede perder lo no guardado", open, Theme.Danger, false, "Forzar", true);
                     row.Busy = false;
                 }
                 else
                 {
-                    row.Set(app.Icon, app.Title, app.Detail, "Cerrar");
+                    row.Set(app.Icon, app.Title, app.Detail, open, null, false, "Cerrar", true);
                     row.Busy = _closeRequested.ContainsKey(app.Key);
                 }
                 layout.Add(row);
             }
+        }
+
+        private void OpenClicked(string key)
+        {
+            var app = _apps.FirstOrDefault(a => a.Key == key);
+            if (app == null) return;
+            var error = AppService.Open(app);
+            if (error != null) _notify(app.Title, Icons.Warning, error, CurrentScreen);
+            // Al traer una ventana al frente el panel ya no hace falta.
+            else if (app.HasWindow) HideMixer();
+        }
+
+        /// <summary>Menu con todas las acciones de una app (clic derecho en la fila).</summary>
+        private void ShowAppMenu(string key)
+        {
+            var app = _apps.FirstOrDefault(a => a.Key == key);
+            if (app == null) return;
+
+            var menu = new ContextMenuStrip { Renderer = new DarkMenuRenderer(), ShowImageMargin = false };
+            menu.Items.Add(app.HasWindow ? "Mostrar ventana" : "Abrir", null, (s, e) => OpenClicked(key)).Font = Theme.TitleFont;
+            menu.Items.Add("Reiniciar", null, (s, e) => RestartClicked(key)).Enabled = app.Path != null;
+            menu.Items.Add("Abrir ubicación del archivo", null, (s, e) => AppService.ShowInExplorer(app)).Enabled = app.Path != null;
+            menu.Items.Add(new ToolStripSeparator());
+            menu.Items.Add("Cerrar", null, (s, e) => CloseClicked(key));
+            var force = menu.Items.Add("Forzar cierre", null, (s, e) =>
+            {
+                var error = AppService.ForceClose(app);
+                if (error != null) _notify(app.Title, Icons.Warning, error, CurrentScreen);
+                Rebuild();
+            });
+            force.ForeColor = Theme.Danger;
+
+            _menuOpen = true;
+            menu.Closed += (s, e) =>
+            {
+                _menuOpen = false;
+                BeginInvoke((Action)menu.Dispose);
+            };
+            menu.Show(Cursor.Position);
+        }
+
+        private void RestartClicked(string key)
+        {
+            var app = _apps.FirstOrDefault(a => a.Key == key);
+            if (app == null || !_restarting.Add(key)) return;
+            Rebuild();
+            Task.Run(() => AppService.Restart(app)).ContinueWith(t =>
+            {
+                _restarting.Remove(key);
+                var error = t.IsFaulted ? "Error inesperado al reiniciar" : t.Result;
+                if (t.IsFaulted) Log.Error(t.Exception);
+                _notify(app.Title, error == null ? app.Icon : Icons.Warning, error ?? "Reiniciada", CurrentScreen);
+                if (Visible && _tab == TabApps) Rebuild();
+            }, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         private void CloseClicked(string key)
@@ -438,7 +504,8 @@ namespace VolumeMixer
         {
             var s = Dpi;
             var rowH = VolumeRow.RowHeight(s);
-            var headerH = (int)(46 * s);
+            var brandH = (int)(38 * s);
+            var headerH = brandH + (int)(42 * s);
             var footerH = (int)(30 * s);
             var gap = (int)(12 * s);
 
@@ -457,7 +524,8 @@ namespace VolumeMixer
             var top = _anchorAbove ? _anchorBottom - Height : _anchorTop;
             Top = Math.Max(_area.Top, Math.Min(top, _area.Bottom - Height));
 
-            _tabs.SetBounds(0, 0, Width, headerH);
+            _brand.SetBounds(0, 0, Width, brandH);
+            _tabs.SetBounds(0, brandH, Width, headerH - brandH);
             _list.SetBounds(0, headerH, Width, listH);
             _footer.SetBounds((int)(18 * s), headerH + listH, Width - (int)(36 * s), footerH);
             switch (_tab)
@@ -469,7 +537,7 @@ namespace VolumeMixer
                     break;
                 case TabDrives: _footer.Text = "Expulsa el disco antes de desconectarlo"; break;
                 case TabWifi: _footer.Text = "Clic en una red para conectarte"; break;
-                default: _footer.Text = "Cerrar pide al programa que se cierre; si no responde, Forzar"; break;
+                default: _footer.Text = "Clic derecho en una app: más opciones (reiniciar, ubicación…)"; break;
             }
 
             var rowW = Width - (scroll ? SystemInformation.VerticalScrollBarWidth : 0);

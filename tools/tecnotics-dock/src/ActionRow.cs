@@ -3,11 +3,11 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
-namespace VolumeMixer
+namespace TecnoticsDock
 {
     /// <summary>
-    /// Fila generica del panel: icono, titulo, detalle y un boton a la derecha
-    /// (Expulsar, Conectar, Activar...). Clic en la fila = clic en el boton.
+    /// Fila generica del panel: icono, titulo, detalle y hasta dos botones a la derecha
+    /// (Expulsar, Conectar, Abrir / Cerrar...). Clic en la fila = clic en el boton principal.
     /// </summary>
     internal sealed class ActionRow : Control
     {
@@ -16,9 +16,11 @@ namespace VolumeMixer
         private string _detail;
         private Color? _detailColor;
         private string _button;
+        private string _button2;
+        private bool _button2Danger;
         private bool _busy;
         private bool _hover;
-        private bool _hoverButton;
+        private int _hoverButton; // 0 ninguno, 1 principal, 2 secundario
         private bool _highlight;
 
         public ActionRow()
@@ -29,69 +31,98 @@ namespace VolumeMixer
             BackColor = Theme.Background;
         }
 
+        /// <summary>Boton principal (el de la derecha).</summary>
         public event EventHandler ButtonClick;
+
+        /// <summary>Boton secundario (a la izquierda del principal).</summary>
+        public event EventHandler Button2Click;
+
+        /// <summary>Clic derecho en cualquier parte de la fila.</summary>
+        public event EventHandler RightClick;
 
         /// <summary>Deja un espacio extra antes de esta fila (separa secciones).</summary>
         public bool GapBefore { get; set; }
 
-        /// <summary>Si es false, solo el boton responde al clic (no toda la fila).</summary>
+        /// <summary>Si es false, solo los botones responden al clic (no toda la fila).</summary>
         public bool RowClickable { get; set; } = true;
 
-        public void Set(Image icon, string title, string detail, string button, Color? detailColor = null, bool highlight = false)
+        public void Set(Image icon, string title, string detail, string button, Color? detailColor = null, bool highlight = false,
+            string button2 = null, bool button2Danger = false)
         {
-            if (_icon == icon && _title == title && _detail == detail && _button == button && _detailColor == detailColor && _highlight == highlight)
+            if (_icon == icon && _title == title && _detail == detail && _button == button && _detailColor == detailColor &&
+                _highlight == highlight && _button2 == button2 && _button2Danger == button2Danger)
                 return;
             _icon = icon;
             _title = title ?? "";
             _detail = detail;
             _button = button;
+            _button2 = button2;
+            _button2Danger = button2Danger;
             _detailColor = detailColor;
             _highlight = highlight;
             Cursor = button != null && RowClickable ? Cursors.Hand : Cursors.Default;
             Invalidate();
         }
 
-        /// <summary>Mientras esta ocupado (expulsando, conectando) el boton no responde.</summary>
+        /// <summary>Mientras esta ocupado (expulsando, conectando) los botones no responden.</summary>
         public bool Busy
         {
             get => _busy;
-            set { _busy = value; Invalidate(); }
+            set { if (_busy != value) { _busy = value; Invalidate(); } }
         }
 
         private float Dpi => DeviceDpi / 96f;
 
-        private Rectangle ButtonRect
+        private Rectangle MakeButton(string text, int right)
+        {
+            var size = TextRenderer.MeasureText(text, Theme.BodyFont);
+            var w = size.Width + (int)(18 * Dpi);
+            var h = (int)(28 * Dpi);
+            return new Rectangle(right - w, (Height - h) / 2, w, h);
+        }
+
+        private Rectangle ButtonRect => _button == null ? Rectangle.Empty : MakeButton(_button, Width - (int)(14 * Dpi));
+
+        private Rectangle Button2Rect
         {
             get
             {
-                if (_button == null) return Rectangle.Empty;
-                var size = TextRenderer.MeasureText(_button, Theme.BodyFont);
-                var w = size.Width + (int)(20 * Dpi);
-                var h = (int)(28 * Dpi);
-                return new Rectangle(Width - w - (int)(14 * Dpi), (Height - h) / 2, w, h);
+                if (_button2 == null) return Rectangle.Empty;
+                var right = _button == null ? Width - (int)(14 * Dpi) : ButtonRect.Left - (int)(6 * Dpi);
+                return MakeButton(_button2, right);
             }
         }
+
+        private int HitButton(Point p) => ButtonRect.Contains(p) ? 1 : Button2Rect.Contains(p) ? 2 : 0;
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
-            var over = ButtonRect.Contains(e.Location);
+            var over = HitButton(e.Location);
             if (!_hover || over != _hoverButton) { _hover = true; _hoverButton = over; Invalidate(); }
-            Cursor = _button != null && (RowClickable || over) ? Cursors.Hand : Cursors.Default;
+            Cursor = over != 0 || (_button != null && RowClickable) ? Cursors.Hand : Cursors.Default;
         }
 
         protected override void OnMouseLeave(EventArgs e)
         {
             base.OnMouseLeave(e);
-            _hover = _hoverButton = false;
+            _hover = false;
+            _hoverButton = 0;
             Invalidate();
         }
 
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
-            if (e.Button != MouseButtons.Left || _button == null || _busy) return;
-            if (RowClickable || ButtonRect.Contains(e.Location)) ButtonClick?.Invoke(this, EventArgs.Empty);
+            if (e.Button == MouseButtons.Right)
+            {
+                RightClick?.Invoke(this, EventArgs.Empty);
+                return;
+            }
+            if (e.Button != MouseButtons.Left || _busy) return;
+            var hit = HitButton(e.Location);
+            if (hit == 2) Button2Click?.Invoke(this, EventArgs.Empty);
+            else if (_button != null && (hit == 1 || RowClickable)) ButtonClick?.Invoke(this, EventArgs.Empty);
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -117,7 +148,9 @@ namespace VolumeMixer
 
             var left = (int)(56 * s);
             var btn = ButtonRect;
-            var right = (btn.IsEmpty ? Width - (int)(14 * s) : btn.Left) - (int)(8 * s);
+            var btn2 = Button2Rect;
+            var firstButton = !btn2.IsEmpty ? btn2 : btn;
+            var right = (firstButton.IsEmpty ? Width - (int)(14 * s) : firstButton.Left) - (int)(8 * s);
             var flags = TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix;
             if (string.IsNullOrEmpty(_detail))
             {
@@ -129,20 +162,57 @@ namespace VolumeMixer
                 TextRenderer.DrawText(g, _detail, Theme.SmallFont, new Rectangle(left, (int)(26 * s), right - left, (int)(20 * s)), _detailColor ?? Theme.SubText, flags);
             }
 
-            if (!btn.IsEmpty)
-            {
-                var fill = _busy ? Theme.Track : _hoverButton ? Theme.Accent : Theme.Selected;
-                using (var b = new SolidBrush(fill))
-                using (var path = Theme.RoundedRect(btn, 5 * s))
-                    g.FillPath(b, path);
-                TextRenderer.DrawText(g, _busy ? "…" : _button, Theme.BodyFont, btn,
-                    _hoverButton && !_busy ? Theme.Background : Theme.Text,
-                    TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
-            }
+            DrawButton(g, btn, _button, _hoverButton == 1, false);
+            DrawButton(g, btn2, _button2, _hoverButton == 2, _button2Danger);
+        }
+
+        private void DrawButton(Graphics g, Rectangle rect, string text, bool hover, bool danger)
+        {
+            if (rect.IsEmpty) return;
+            var hoverColor = danger ? Theme.Danger : Theme.Accent;
+            var fill = _busy ? Theme.Track : hover ? hoverColor : Theme.Selected;
+            using (var b = new SolidBrush(fill))
+            using (var path = Theme.RoundedRect(rect, 5 * Dpi))
+                g.FillPath(b, path);
+            var color = hover && !_busy ? Theme.Background : danger ? Theme.Danger : Theme.Text;
+            TextRenderer.DrawText(g, _busy ? "…" : text, Theme.BodyFont, rect, color,
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
         }
     }
 
-    /// <summary>Pestanas del panel: Volumen / Discos / Wi-Fi.</summary>
+    /// <summary>Franja superior con el logo y el nombre Tecnotics Dock.</summary>
+    internal sealed class BrandHeader : Control
+    {
+        public BrandHeader()
+        {
+            SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint |
+                     ControlStyles.UserPaint | ControlStyles.ResizeRedraw, true);
+            SetStyle(ControlStyles.Selectable, false);
+            BackColor = Theme.Background;
+        }
+
+        private static readonly Font BrandFont = new Font("Segoe UI Black", 10.5f);
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            var s = DeviceDpi / 96f;
+            g.Clear(Theme.Background);
+            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            var logo = (int)(22 * s);
+            var x = (int)(16 * s);
+            g.DrawImage(Icons.Logo, x, (Height - logo) / 2 + (int)(2 * s), logo, logo);
+            x += logo + (int)(8 * s);
+
+            var flags = TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.NoPadding;
+            var bounds = new Rectangle(x, (int)(2 * s), Width - x, Height);
+            TextRenderer.DrawText(g, "TECNOTICS", BrandFont, bounds, Theme.Accent, flags);
+            x += TextRenderer.MeasureText(g, "TECNOTICS", BrandFont, Size.Empty, flags).Width + (int)(5 * s);
+            TextRenderer.DrawText(g, "DOCK", BrandFont, new Rectangle(x, (int)(2 * s), Width - x, Height), Theme.Orange, flags);
+        }
+    }
+
+    /// <summary>Pestanas del panel: Volumen / Discos / Wi-Fi / Apps.</summary>
     internal sealed class TabBar : Control
     {
         private readonly string[] _labels;

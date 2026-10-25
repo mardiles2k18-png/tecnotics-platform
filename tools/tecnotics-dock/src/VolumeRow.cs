@@ -3,7 +3,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
-namespace VolumeMixer
+namespace TecnoticsDock
 {
     /// <summary>
     /// Fila del mezclador dibujada a mano: icono, nombre, barra de volumen y porcentaje.

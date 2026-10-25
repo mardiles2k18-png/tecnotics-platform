@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Win32.SafeHandles;
 
-namespace VolumeMixer
+namespace TecnoticsDock
 {
     /// <summary>Un disco externo (USB, tarjeta SD...) con todas sus letras de unidad.</summary>
     internal sealed class ExternalDisk

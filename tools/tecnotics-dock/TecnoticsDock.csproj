@@ -6,14 +6,14 @@
     <TargetFramework>net48</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
-    <AssemblyName>VolumeMixer</AssemblyName>
-    <RootNamespace>VolumeMixer</RootNamespace>
+    <AssemblyName>TecnoticsDock</AssemblyName>
+    <RootNamespace>TecnoticsDock</RootNamespace>
     <ApplicationIcon>assets\app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>1.0.0</Version>
-    <Product>Tecnotics Volume Mixer</Product>
+    <Version>1.1.0</Version>
+    <Product>Tecnotics Dock</Product>
     <Company>Tecnotics</Company>
-    <Description>Mezclador de volumen por aplicacion</Description>
+    <Description>Panel rapido para la segunda pantalla: volumen, discos, Wi-Fi y apps</Description>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
 
@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="assets\app.ico" LogicalName="app.ico" />
+    <EmbeddedResource Include="assets\logo.png" LogicalName="logo.png" />
   </ItemGroup>
 
 </Project>

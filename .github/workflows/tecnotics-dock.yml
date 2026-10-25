@@ -1,10 +1,10 @@
-name: Build Volume Mixer
+name: Build Tecnotics Dock
 
 on:
   push:
     paths:
-      - "tools/volume-mixer/**"
-      - ".github/workflows/volume-mixer.yml"
+      - "tools/tecnotics-dock/**"
+      - ".github/workflows/tecnotics-dock.yml"
   workflow_dispatch: {}
 
 jobs:
@@ -16,9 +16,9 @@ jobs:
         with:
           dotnet-version: "8.0.x"
       - name: Build
-        working-directory: tools/volume-mixer
+        working-directory: tools/tecnotics-dock
         run: dotnet build -c Release
       - uses: actions/upload-artifact@v4
         with:
-          name: VolumeMixer
-          path: tools/volume-mixer/bin/Release/net48/VolumeMixer.exe
+          name: TecnoticsDock
+          path: tools/tecnotics-dock/bin/Release/net48/TecnoticsDock.exe

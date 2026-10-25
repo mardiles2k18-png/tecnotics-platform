@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Security;
 using System.Text;
 
-namespace VolumeMixer
+namespace TecnoticsDock
 {
     internal sealed class WifiNetwork
     {

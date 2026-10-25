@@ -3,19 +3,21 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Reflection;
 
-namespace VolumeMixer
+namespace TecnoticsDock
 {
     internal static class Theme
     {
-        public static readonly Color Background = Color.FromArgb(32, 32, 32);
-        public static readonly Color Border = Color.FromArgb(58, 58, 58);
-        public static readonly Color Hover = Color.FromArgb(44, 44, 44);
-        public static readonly Color Selected = Color.FromArgb(52, 52, 52);
-        public static readonly Color Text = Color.FromArgb(240, 240, 240);
-        public static readonly Color SubText = Color.FromArgb(160, 160, 160);
-        public static readonly Color Accent = Color.FromArgb(76, 194, 255);
-        public static readonly Color AccentDim = Color.FromArgb(110, 110, 110);
-        public static readonly Color Track = Color.FromArgb(80, 80, 80);
+        // Paleta de marca Tecnotics (docs/brand.md): celeste #69C7D8, naranja #F7931A, grafito #111318.
+        public static readonly Color Background = Color.FromArgb(22, 25, 31);
+        public static readonly Color Border = Color.FromArgb(48, 54, 64);
+        public static readonly Color Hover = Color.FromArgb(32, 37, 45);
+        public static readonly Color Selected = Color.FromArgb(40, 46, 56);
+        public static readonly Color Text = Color.FromArgb(240, 242, 245);
+        public static readonly Color SubText = Color.FromArgb(150, 158, 170);
+        public static readonly Color Accent = Color.FromArgb(105, 199, 216);
+        public static readonly Color Orange = Color.FromArgb(247, 147, 26);
+        public static readonly Color AccentDim = Color.FromArgb(100, 108, 120);
+        public static readonly Color Track = Color.FromArgb(58, 64, 74);
         public static readonly Color Meter = Color.FromArgb(120, 220, 140);
         public static readonly Color Danger = Color.FromArgb(255, 99, 99);
 
@@ -41,6 +43,7 @@ namespace VolumeMixer
     internal static class Icons
     {
         public static readonly Image Speaker = Draw(DrawSpeaker);
+        public static readonly Image Logo = LoadLogo();
         public static readonly Image Bell = Draw(DrawBell);
         public static readonly Image App = Draw(DrawApp);
         public static readonly Image Drive = Draw(DrawDrive);
@@ -59,6 +62,13 @@ namespace VolumeMixer
                 using (var s = Assembly.GetExecutingAssembly().GetManifestResourceStream("app.ico"))
                     return s != null ? new Icon(s) : SystemIcons.Application;
             }
+        }
+
+        /// <summary>Chip del logo Tecnotics (assets/logo.png embebido).</summary>
+        private static Image LoadLogo()
+        {
+            using (var s = Assembly.GetExecutingAssembly().GetManifestResourceStream("logo.png"))
+                return s != null ? new Bitmap(s) : Draw(DrawSpeaker);
         }
 
         private static Image Draw(Action<Graphics> paint)
@@ -143,6 +153,33 @@ namespace VolumeMixer
                 using (var p = new Pen(Theme.Danger, 2.6f) { StartCap = LineCap.Round, EndCap = LineCap.Round })
                     g.DrawLine(p, 5, 5, 27, 27);
             }
+        }
+    }
+
+    /// <summary>Menus contextuales oscuros con los colores de la marca.</summary>
+    internal sealed class DarkMenuRenderer : System.Windows.Forms.ToolStripProfessionalRenderer
+    {
+        public DarkMenuRenderer() : base(new Colors()) { RoundedEdges = false; }
+
+        protected override void OnRenderItemText(System.Windows.Forms.ToolStripItemTextRenderEventArgs e)
+        {
+            if (e.Item.ForeColor != Theme.Danger) e.TextColor = e.Item.Enabled ? Theme.Text : Theme.AccentDim;
+            base.OnRenderItemText(e);
+        }
+
+        private sealed class Colors : System.Windows.Forms.ProfessionalColorTable
+        {
+            public override Color ToolStripDropDownBackground => Theme.Background;
+            public override Color MenuBorder => Theme.Border;
+            public override Color MenuItemBorder => Theme.Selected;
+            public override Color MenuItemSelected => Theme.Selected;
+            public override Color MenuItemSelectedGradientBegin => Theme.Selected;
+            public override Color MenuItemSelectedGradientEnd => Theme.Selected;
+            public override Color ImageMarginGradientBegin => Theme.Background;
+            public override Color ImageMarginGradientMiddle => Theme.Background;
+            public override Color ImageMarginGradientEnd => Theme.Background;
+            public override Color SeparatorDark => Theme.Border;
+            public override Color SeparatorLight => Theme.Background;
         }
     }
 }

@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
-using VolumeMixer.Interop;
+using TecnoticsDock.Interop;
 
-namespace VolumeMixer
+namespace TecnoticsDock
 {
     /// <summary>Algo cuyo volumen se puede controlar: un dispositivo o una aplicacion.</summary>
     internal interface IVolumeTarget

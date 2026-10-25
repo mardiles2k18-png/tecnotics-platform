@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 // Interop minimo con la API Core Audio de Windows (WASAPI).
 // El orden de los metodos en cada interfaz debe coincidir con la vtable nativa.
-namespace VolumeMixer.Interop
+namespace TecnoticsDock.Interop
 {
     internal enum EDataFlow { Render = 0, Capture = 1, All = 2 }
 

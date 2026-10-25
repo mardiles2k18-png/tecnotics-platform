@@ -7,7 +7,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace VolumeMixer
+namespace TecnoticsDock
 {
     /// <summary>Nombre, titulo legible e icono de un proceso, con cache por PID.</summary>
     internal sealed class ProcessInfo

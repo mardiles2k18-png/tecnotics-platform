@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 using System.Windows.Forms;
 
-namespace VolumeMixer
+namespace TecnoticsDock
 {
     internal enum HotkeyAction
     {
@@ -17,16 +17,16 @@ namespace VolumeMixer
         CursorMute,
     }
 
-    /// <summary>Configuracion en %APPDATA%\TecnoticsVolumeMixer\settings.ini (texto clave=valor).</summary>
+    /// <summary>Configuracion en %APPDATA%\TecnoticsVolumeMixer\settings.ini (texto clave=valor), ver AppInfo.StorageName.</summary>
     internal sealed class Settings
     {
         public static readonly string Folder =
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TecnoticsVolumeMixer");
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppInfo.StorageName);
         public static readonly string FilePath = Path.Combine(Folder, "settings.ini");
 
         private static readonly (HotkeyAction Action, string Key, string Default, string Help)[] HotkeyDefs =
         {
-            (HotkeyAction.OpenMixer, "abrir_mezclador", "Ctrl+Alt+V", "Abrir / cerrar el mezclador"),
+            (HotkeyAction.OpenMixer, "abrir_mezclador", "Ctrl+Alt+V", "Abrir / cerrar el panel"),
             (HotkeyAction.FocusUp, "app_activa_subir", "Ctrl+Alt+PageUp", "Subir volumen de la app activa"),
             (HotkeyAction.FocusDown, "app_activa_bajar", "Ctrl+Alt+PageDown", "Bajar volumen de la app activa"),
             (HotkeyAction.FocusMute, "app_activa_silenciar", "Ctrl+Alt+End", "Silenciar la app activa"),
@@ -78,7 +78,7 @@ namespace VolumeMixer
         {
             Directory.CreateDirectory(Folder);
             var sb = new StringBuilder();
-            sb.AppendLine("# Mezclador de volumen Tecnotics - configuracion");
+            sb.AppendLine("# " + AppInfo.Name + " - configuracion");
             sb.AppendLine("# Modificadores: Ctrl, Alt, Shift, Win. Teclas: A-Z, F1-F24, PageUp, PageDown, Home, End,");
             sb.AppendLine("# Up, Down, Left, Right, Insert, Delete, NumPad0-NumPad9, Add, Subtract, etc.");
             sb.AppendLine("# Deja un atajo vacio para desactivarlo. Los cambios se aplican al guardar.");

@@ -2,7 +2,7 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace VolumeMixer
+namespace TecnoticsDock
 {
     /// <summary>Pide la contraseña de una red Wi‑Fi nueva.</summary>
     internal sealed class PasswordForm : Form

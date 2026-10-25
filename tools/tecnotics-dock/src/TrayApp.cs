@@ -6,13 +6,13 @@ using System.Linq;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
-namespace VolumeMixer
+namespace TecnoticsDock
 {
     /// <summary>Icono de bandeja, atajos globales y acciones sobre la app activa / bajo el mouse.</summary>
     internal sealed class TrayApp : ApplicationContext
     {
         private const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
-        private const string RunValue = "TecnoticsVolumeMixer";
+        private const string RunValue = AppInfo.StorageName;
 
         private readonly AudioService _audio = new AudioService();
         private readonly WifiService _wifi = new WifiService();
@@ -31,12 +31,13 @@ namespace VolumeMixer
         public TrayApp()
         {
             _settings = Settings.Load();
+            RefreshAutostartPath();
             _mixer = CreatePanel();
             _osd = new OsdForm();
             _ = _osd.Handle; // crea la ventana ya, para poder recibir eventos de otros hilos via BeginInvoke
 
             _autostartItem = new ToolStripMenuItem("Iniciar con Windows", null, (s, e) => ToggleAutostart()) { Checked = IsAutostartEnabled() };
-            var menu = new ContextMenuStrip();
+            var menu = new ContextMenuStrip { Renderer = new DarkMenuRenderer(), ShowImageMargin = false, ShowCheckMargin = true };
             menu.Items.Add("Abrir panel", null, (s, e) => _mixer.ShowMixer()).Font = Theme.TitleFont;
             menu.Items.Add("Ver atajos de teclado", null, (s, e) => ShowHotkeyHelp());
             menu.Items.Add("Editar configuración", null, (s, e) => OpenSettingsFile());
@@ -49,7 +50,7 @@ namespace VolumeMixer
             _tray = new NotifyIcon
             {
                 Icon = Icons.AppIcon,
-                Text = "Mezclador de volumen",
+                Text = AppInfo.Name,
                 ContextMenuStrip = menu,
                 Visible = true,
             };
@@ -85,9 +86,9 @@ namespace VolumeMixer
             _watcher.Changed += (s, e) => _osd.BeginInvoke((Action)(() => { _reloadDebounce.Stop(); _reloadDebounce.Start(); }));
             _reloadDebounce.Tick += (s, e) => { _reloadDebounce.Stop(); ReloadSettings(); };
 
-            _tray.ShowBalloonTip(4000, "Mezclador de volumen listo",
+            _tray.ShowBalloonTip(4000, AppInfo.Name + " listo",
                 failed.Count == 0
-                    ? $"{_settings.Hotkeys[HotkeyAction.OpenMixer]} abre el mezclador.\n{_settings.Hotkeys[HotkeyAction.FocusUp]} / {_settings.Hotkeys[HotkeyAction.FocusDown]} cambian el volumen de la app activa."
+                    ? $"{_settings.Hotkeys[HotkeyAction.OpenMixer]} abre el panel.\n{_settings.Hotkeys[HotkeyAction.FocusUp]} / {_settings.Hotkeys[HotkeyAction.FocusDown]} cambian el volumen de la app activa."
                     : "Algunos atajos ya los usa otro programa: " + string.Join(", ", failed),
                 failed.Count == 0 ? ToolTipIcon.Info : ToolTipIcon.Warning);
         }
@@ -205,9 +206,9 @@ namespace VolumeMixer
                 .Select(p => $"{p.Value,-26}  {Settings.Describe(p.Key)}");
             MessageBox.Show(
                 string.Join("\n", lines) +
-                "\n\nBotón flotante: arrástralo a cualquier pantalla; clic para abrir el mezclador ahí\n" +
+                "\n\nBotón flotante: arrástralo a cualquier pantalla; clic para abrir el panel ahí\n" +
                 "(no le quita el foco al juego). Clic derecho: este menú.\n" +
-                "\nEn el mezclador:\n" +
+                "\nEn la pestaña Volumen:\n" +
                 $"  Rueda del mouse sobre una fila: ±{_settings.StepPercent}% (Shift: ±1%)\n" +
                 "  Clic derecho o clic en el icono: silenciar\n" +
                 "  Clic con la rueda: volumen al 100%\n" +
@@ -223,7 +224,7 @@ namespace VolumeMixer
 
         private static bool IsButtonEnabled()
         {
-            using (var key = Registry.CurrentUser.OpenSubKey(@"Software\TecnoticsVolumeMixer"))
+            using (var key = Registry.CurrentUser.OpenSubKey(@"Software\" + AppInfo.StorageName))
                 return !(key?.GetValue("ShowButton") is int v) || v != 0;
         }
 
@@ -234,8 +235,25 @@ namespace VolumeMixer
             _buttonItem.Checked = visible;
             try
             {
-                using (var key = Registry.CurrentUser.CreateSubKey(@"Software\TecnoticsVolumeMixer"))
+                using (var key = Registry.CurrentUser.CreateSubKey(@"Software\" + AppInfo.StorageName))
                     key.SetValue("ShowButton", visible ? 1 : 0);
+            }
+            catch (Exception ex) { Log.Error(ex); }
+        }
+
+        /// <summary>
+        /// Si el inicio automatico apunta a otro .exe (p. ej. al VolumeMixer.exe de la version anterior,
+        /// o el archivo se movio), lo actualiza a este.
+        /// </summary>
+        private static void RefreshAutostartPath()
+        {
+            try
+            {
+                using (var key = Registry.CurrentUser.OpenSubKey(RunKey, true))
+                {
+                    var current = "\"" + Application.ExecutablePath + "\"";
+                    if (key?.GetValue(RunValue) is string value && value != current) key.SetValue(RunValue, current);
+                }
             }
             catch (Exception ex) { Log.Error(ex); }
         }

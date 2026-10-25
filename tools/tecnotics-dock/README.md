@@ -1,4 +1,6 @@
-# Mezclador de volumen y panel rápido (Windows)
+# Tecnotics Dock
+
+**Panel rápido para tu segunda pantalla** (Windows 10/11).
 
 Controla el volumen de cada programa sin abrir el mezclador de Windows. Pensado para
 el caso típico: una película en una pantalla y un juego en la otra, y ajustar cada uno
@@ -6,9 +8,9 @@ en un segundo.
 
 Como la pantalla secundaria no tiene los iconos de la bandeja, el panel también trae
 **Discos** (expulsar USB y discos externos), **Wi‑Fi** (ver la conexión, conectarse,
-activar o desactivar) y **Apps** (ver los programas en segundo plano y cerrarlos).
+activar o desactivar) y **Apps** (ver los programas en segundo plano, abrirlos, reiniciarlos o cerrarlos).
 
-- **Un solo `.exe` de ~90 KB**, sin instalar nada (usa .NET Framework 4.8, que ya viene en Windows 10/11).
+- **Un solo `TecnoticsDock.exe`**, sin instalar nada (usa .NET Framework 4.8, que ya viene en Windows 10/11).
 - Vive en la **bandeja del sistema** (junto al reloj) y en un **botón flotante** que puedes dejar
   en cualquier pantalla, incluida la secundaria (que no tiene bandeja).
 - **No le quita el foco al juego**: el botón flotante y el atajo abren el mezclador sin activarlo,
@@ -20,10 +22,10 @@ activar o desactivar) y **Apps** (ver los programas en segundo plano y cerrarlos
 
 ### Botón flotante
 
-Al abrir la app aparece un botón redondo con un parlante en la esquina inferior derecha de la
+Al abrir la app aparece un botón con el chip de Tecnotics en la esquina inferior derecha de la
 pantalla secundaria. Puedes **arrastrarlo** donde quieras (recuerda la posición).
 
-- El botón muestra el parlante y, al lado, el estado del Wi‑Fi (tachado = apagado, gris = sin conexión).
+- El botón muestra el logo y, al lado, el estado del Wi‑Fi (tachado = apagado, gris = sin conexión).
 - **Clic**: abre el panel junto al botón. Se cierra con otro clic en el botón o haciendo clic fuera.
 - **Clic derecho**: menú (ocultar el botón, configuración, salir…).
 - Si lo ocultas, se vuelve a mostrar desde el menú del icono de la bandeja → **Botón flotante**.
@@ -75,16 +77,25 @@ Muestra tus programas abiertos (no los de Windows) con su icono y la memoria que
   de la bandeja (Logitech G Hub, qBittorrent, Epic Games, etc.).
 - **Con ventana**: lo que tienes abierto en pantalla.
 
-**Cerrar** le pide al programa que se cierre, como al pulsar la X. Si a los 3 segundos sigue
-abierto, el botón cambia a **Forzar**, que lo termina de inmediato (lo que no esté guardado se pierde).
-Solo el botón cierra: un clic por error en la fila no hace nada. Los programas que corren como
+Cada app tiene dos botones:
+
+- **Abrir** (en segundo plano): vuelve a ejecutar el programa, que en la mayoría de las apps de
+  bandeja (Steam, Discord, G Hub, qBittorrent…) muestra su ventana principal con todas sus opciones.
+  **Mostrar** (con ventana): trae su ventana al frente.
+- **Cerrar**: le pide al programa que se cierre, como al pulsar la X. Si a los 3 segundos sigue
+  abierto, el botón cambia a **Forzar**, que lo termina de inmediato (lo que no esté guardado se pierde).
+
+**Clic derecho** en una app abre su menú: Abrir/Mostrar ventana, **Reiniciar**, **Abrir ubicación
+del archivo**, Cerrar y Forzar cierre.
+
+Solo los botones actúan: un clic por error en la fila no hace nada. Los programas que corren como
 administrador no aparecen, porque no se pueden cerrar sin permisos de administrador.
 
 `Ctrl+Tab` cambia de pestaña cuando el panel tiene el foco.
 
 ## Configuración
 
-Clic derecho en el icono de la bandeja → **Editar configuración** abre
+Clic derecho en el botón flotante o en el icono de la bandeja → **Editar configuración** abre
 `%APPDATA%\TecnoticsVolumeMixer\settings.ini`. Ahí se cambian los atajos, el tamaño del paso
 y si se muestra el indicador en pantalla. Al guardar el archivo los cambios se aplican solos.
 
@@ -95,12 +106,12 @@ En el mismo menú está **Iniciar con Windows**.
 Con el [SDK de .NET](https://dotnet.microsoft.com/download) instalado:
 
 ```bat
-tools\volume-mixer\build.cmd
+tools\tecnotics-dock\build.cmd
 ```
 
-El ejecutable queda en `tools\volume-mixer\bin\Release\net48\VolumeMixer.exe`.
-También lo compila el workflow `Build Volume Mixer` de GitHub Actions (artefacto `VolumeMixer`)
-en cada cambio dentro de `tools/volume-mixer/`.
+El ejecutable queda en `tools\tecnotics-dock\bin\Release\net48\TecnoticsDock.exe`.
+También lo compila el workflow `Build Tecnotics Dock` de GitHub Actions (artefacto `TecnoticsDock`)
+en cada cambio dentro de `tools/tecnotics-dock/`.
 
 ## Notas
 
@@ -108,3 +119,7 @@ en cada cambio dentro de `tools/volume-mixer/`.
   *ventana sin bordes* sí. Los atajos funcionan en ambos casos.
 - Los navegadores reproducen el audio desde un proceso aparte; la app los agrupa por programa,
   así que "Google Chrome" es una sola fila.
+- Los menús que cada app muestra en su icono de la bandeja no se pueden leer desde otro programa
+  en Windows 11; por eso **Abrir** muestra la ventana principal de la app, donde están esas mismas opciones.
+- Actualizar desde la versión "Mezclador de volumen" (`VolumeMixer.exe`) conserva la configuración,
+  la posición del botón e "Iniciar con Windows" (que pasa a apuntar al nuevo `.exe`).

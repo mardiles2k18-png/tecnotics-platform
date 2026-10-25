@@ -3,7 +3,7 @@ using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
-namespace VolumeMixer
+namespace TecnoticsDock
 {
     /// <summary>Averigua que proceso esta detras de la ventana activa o de la ventana bajo el mouse.</summary>
     internal static class WindowHelper

@@ -5,17 +5,17 @@ using System.Linq;
 using System.Windows.Forms;
 using Microsoft.Win32;
 
-namespace VolumeMixer
+namespace TecnoticsDock
 {
     /// <summary>
-    /// Boton redondo siempre visible que se puede arrastrar a cualquier pantalla (p. ej. la secundaria,
-    /// que no tiene bandeja del sistema). Clic: abre el mezclador al lado. Clic derecho: menu.
+    /// Boton (pastilla con el logo Tecnotics) siempre visible que se puede arrastrar a cualquier pantalla (p. ej. la secundaria,
+    /// que no tiene bandeja del sistema). Clic: abre el panel al lado. Clic derecho: menu.
     /// Nunca toma el foco, asi que usarlo no saca al juego de primer plano.
     /// </summary>
     internal sealed class FloatingButton : Form
     {
-        private const string RegKey = @"Software\TecnoticsVolumeMixer";
-        private const int SizeDip = 44;
+        private const string RegKey = @"Software\" + AppInfo.StorageName;
+        private const int WidthDip = 76, HeightDip = 40;
         private Point _downScreen;
         private Point _downLocation;
         private bool _pressed;
@@ -31,17 +31,14 @@ namespace VolumeMixer
             AutoScaleMode = AutoScaleMode.None;
             BackColor = Theme.Background;
             ContextMenuStrip = menu;
-            Text = "Mezclador de volumen";
+            Text = AppInfo.Name;
             SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
 
-            var size = (int)(SizeDip * DeviceDpi / 96f);
-            Size = new Size(size, size);
-            using (var path = new GraphicsPath())
-            {
-                path.AddEllipse(0, 0, size, size);
+            var s = DeviceDpi / 96f;
+            Size = new Size((int)(WidthDip * s), (int)(HeightDip * s));
+            using (var path = Theme.RoundedRect(new RectangleF(0, 0, Width, Height), Height / 2f))
                 Region = new Region(path);
-            }
-            Location = LoadPosition(size);
+            Location = LoadPosition(Size);
         }
 
         /// <summary>Icono pequeno en la esquina (estado del Wi‑Fi); null para no mostrar nada.</summary>
@@ -119,20 +116,19 @@ namespace VolumeMixer
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.Clear(_hover ? Theme.Hover : Theme.Background);
             using (var p = new Pen(_hover ? Theme.Accent : Theme.Border, 2))
-                g.DrawEllipse(p, 1, 1, Width - 3, Height - 3);
+            using (var path = Theme.RoundedRect(new RectangleF(1, 1, Width - 3, Height - 3), (Height - 3) / 2f))
+                g.DrawPath(p, path);
             g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-            if (_badge == null)
+
+            // Logo a la izquierda y estado del Wi‑Fi a la derecha.
+            var logo = (int)(Height * 0.7);
+            var y = (Height - logo) / 2;
+            var x = _badge == null ? (Width - logo) / 2 : (int)(Height * 0.3);
+            g.DrawImage(Icons.Logo, x, y, logo, logo);
+            if (_badge != null)
             {
-                var icon = (int)(Width * 0.6);
-                g.DrawImage(Icons.Speaker, (Width - icon) / 2, (Height - icon) / 2, icon, icon);
-            }
-            else
-            {
-                // Parlante a la izquierda y Wi‑Fi a la derecha, ambos dentro del circulo.
-                var icon = (int)(Width * 0.42);
-                var y = (Height - icon) / 2;
-                g.DrawImage(Icons.Speaker, Width / 2 - icon + 2, y, icon, icon);
-                g.DrawImage(_badge, Width / 2 - 1, y, icon, icon);
+                var wifi = (int)(Height * 0.55);
+                g.DrawImage(_badge, Width - wifi - (int)(Height * 0.3), (Height - wifi) / 2, wifi, wifi);
             }
         }
 
@@ -150,7 +146,7 @@ namespace VolumeMixer
         }
 
         /// <summary>Ultima posicion guardada; si no hay (o la pantalla ya no existe), la esquina de la pantalla secundaria.</summary>
-        private static Point LoadPosition(int size)
+        private static Point LoadPosition(Size size)
         {
             try
             {
@@ -158,7 +154,7 @@ namespace VolumeMixer
                 {
                     if (key?.GetValue("ButtonX") is int x && key.GetValue("ButtonY") is int y)
                     {
-                        var rect = new Rectangle(x, y, size, size);
+                        var rect = new Rectangle(new Point(x, y), size);
                         if (Screen.AllScreens.Any(s => s.WorkingArea.Contains(rect))) return rect.Location;
                     }
                 }
@@ -167,7 +163,7 @@ namespace VolumeMixer
 
             var screen = Screen.AllScreens.FirstOrDefault(s => !s.Primary) ?? Screen.PrimaryScreen;
             var area = screen.WorkingArea;
-            return new Point(area.Right - size - 16, area.Bottom - size - 16);
+            return new Point(area.Right - size.Width - 16, area.Bottom - size.Height - 16);
         }
     }
 }
