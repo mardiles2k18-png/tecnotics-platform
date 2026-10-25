@@ -235,4 +235,33 @@ namespace VolumeMixer
             }
         }
     }
+
+    /// <summary>Titulo pequeno que separa secciones dentro de una pestana.</summary>
+    internal sealed class SectionRow : Control
+    {
+        public SectionRow()
+        {
+            SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint |
+                     ControlStyles.UserPaint | ControlStyles.ResizeRedraw, true);
+            SetStyle(ControlStyles.Selectable, false);
+            BackColor = Theme.Background;
+        }
+
+        public static int RowHeight(float scale) => (int)(28 * scale);
+
+        protected override void OnTextChanged(EventArgs e)
+        {
+            base.OnTextChanged(e);
+            Invalidate();
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            var s = DeviceDpi / 96f;
+            e.Graphics.Clear(Theme.Background);
+            TextRenderer.DrawText(e.Graphics, Text, Theme.SmallFont,
+                new Rectangle((int)(16 * s), 0, Width - (int)(32 * s), Height), Theme.SubText,
+                TextFormatFlags.Left | TextFormatFlags.Bottom | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+        }
+    }
 }

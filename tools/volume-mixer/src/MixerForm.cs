@@ -16,14 +16,15 @@ namespace VolumeMixer
     internal sealed class MixerForm : Form
     {
         private const int WidthDip = 380;
-        private const int TabVolume = 0, TabDrives = 1, TabWifi = 2;
+        private const int TabVolume = 0, TabDrives = 1, TabWifi = 2, TabApps = 3;
+        private const int TabCount = 4;
 
         private readonly AudioService _audio;
         private readonly WifiService _wifi;
         private readonly Settings _settings;
         private readonly Action<string, Image, string, Screen> _notify;
         private readonly Panel _list = new Panel { AutoScroll = true, BackColor = Theme.Background };
-        private readonly TabBar _tabs = new TabBar("Volumen", "Discos", "Wi‑Fi");
+        private readonly TabBar _tabs = new TabBar("Volumen", "Discos", "Wi‑Fi", "Apps");
         private readonly Label _footer = new Label { ForeColor = Theme.SubText, Font = Theme.SmallFont, BackColor = Theme.Background };
         private readonly Timer _refreshTimer = new Timer { Interval = 1000 };
         private readonly Timer _meterTimer = new Timer { Interval = 50 };
@@ -54,6 +55,10 @@ namespace VolumeMixer
         private string _pendingSsid;
         private string _createdProfile;
         private DateTime _pendingSince;
+
+        // Apps
+        private List<RunningApp> _apps = new List<RunningApp>();
+        private readonly Dictionary<string, DateTime> _closeRequested = new Dictionary<string, DateTime>();
 
         public MixerForm(AudioService audio, WifiService wifi, Settings settings, Action<string, Image, string, Screen> notify)
         {
@@ -202,7 +207,7 @@ namespace VolumeMixer
             _wifiMessage = null;
             _list.AutoScrollPosition = Point.Empty;
             if (tab == TabWifi) _wifi.Scan();
-            _refreshTimer.Interval = tab == TabVolume ? 1000 : 2000;
+            _refreshTimer.Interval = tab == TabVolume || tab == TabApps ? 1000 : 2000;
             Rebuild();
         }
 
@@ -220,6 +225,7 @@ namespace VolumeMixer
                     case TabVolume: BuildVolume(layout); break;
                     case TabDrives: BuildDrives(layout); break;
                     case TabWifi: BuildWifi(layout); break;
+                    case TabApps: BuildApps(layout); break;
                 }
             }
             catch (Exception ex)
@@ -362,6 +368,72 @@ namespace VolumeMixer
             }
         }
 
+        private void BuildApps(List<Control> layout)
+        {
+            _apps = AppService.GetApps();
+            var keys = new HashSet<string>(_apps.Select(a => a.Key));
+            foreach (var gone in _closeRequested.Keys.Where(k => !keys.Contains(k)).ToList()) _closeRequested.Remove(gone);
+
+            if (_apps.Count == 0)
+            {
+                layout.Add(Info("apps|none", Icons.App, "No hay programas abiertos", null));
+                return;
+            }
+
+            bool? lastHadWindow = null;
+            foreach (var app in _apps)
+            {
+                if (lastHadWindow != app.HasWindow)
+                {
+                    var section = Row<SectionRow>(app.HasWindow ? "apps|sec|win" : "apps|sec|bg");
+                    section.Text = app.HasWindow ? "CON VENTANA" : "EN SEGUNDO PLANO (BANDEJA)";
+                    layout.Add(section);
+                    lastHadWindow = app.HasWindow;
+                }
+
+                var row = Row<ActionRow>(app.Key, r =>
+                {
+                    // Solo el boton cierra: un clic por error en la fila no debe cerrar nada.
+                    r.RowClickable = false;
+                    r.ButtonClick += (s, e) => CloseClicked((string)((Control)s).Tag);
+                });
+                if (_closeRequested.TryGetValue(app.Key, out var since) && (DateTime.UtcNow - since).TotalSeconds >= 3)
+                {
+                    row.Set(app.Icon, app.Title, "No se cerró. Forzar puede perder lo no guardado", "Forzar", Theme.Danger);
+                    row.Busy = false;
+                }
+                else
+                {
+                    row.Set(app.Icon, app.Title, app.Detail, "Cerrar");
+                    row.Busy = _closeRequested.ContainsKey(app.Key);
+                }
+                layout.Add(row);
+            }
+        }
+
+        private void CloseClicked(string key)
+        {
+            var app = _apps.FirstOrDefault(a => a.Key == key);
+            if (app == null) return;
+
+            if (_closeRequested.TryGetValue(key, out var since) && (DateTime.UtcNow - since).TotalSeconds >= 3)
+            {
+                _closeRequested.Remove(key);
+                var error = AppService.ForceClose(app);
+                if (error != null) _notify(app.Title, Icons.Warning, error, CurrentScreen);
+            }
+            else if (AppService.RequestClose(app))
+            {
+                _closeRequested[key] = DateTime.UtcNow;
+            }
+            else
+            {
+                // Sin ventanas a las que pedirle que se cierre: se ofrece forzar de inmediato.
+                _closeRequested[key] = DateTime.UtcNow.AddSeconds(-3);
+            }
+            Rebuild();
+        }
+
         private void LayoutRows()
         {
             var s = Dpi;
@@ -370,11 +442,12 @@ namespace VolumeMixer
             var footerH = (int)(30 * s);
             var gap = (int)(12 * s);
 
+            int HeightOf(Control c) => c is SectionRow ? SectionRow.RowHeight(s) : rowH;
             int GapBefore(int i) =>
                 i > 0 && ((_layout[i] as VolumeRow)?.Target.IsDevice == true || (_layout[i] as ActionRow)?.GapBefore == true) ? gap : 0;
 
             var contentH = 0;
-            for (var i = 0; i < _layout.Count; i++) contentH += rowH + GapBefore(i);
+            for (var i = 0; i < _layout.Count; i++) contentH += HeightOf(_layout[i]) + GapBefore(i);
 
             var maxListH = (int)(_area.Height * 0.75) - headerH - footerH;
             var listH = Math.Max(rowH, Math.Min(contentH, maxListH));
@@ -395,7 +468,8 @@ namespace VolumeMixer
                         : $"Rueda: ±{_settings.StepPercent}%   Clic der.: silenciar   ↑↓←→ / M";
                     break;
                 case TabDrives: _footer.Text = "Expulsa el disco antes de desconectarlo"; break;
-                default: _footer.Text = "Clic en una red para conectarte"; break;
+                case TabWifi: _footer.Text = "Clic en una red para conectarte"; break;
+                default: _footer.Text = "Cerrar pide al programa que se cierre; si no responde, Forzar"; break;
             }
 
             var rowW = Width - (scroll ? SystemInformation.VerticalScrollBarWidth : 0);
@@ -403,8 +477,9 @@ namespace VolumeMixer
             for (var i = 0; i < _layout.Count; i++)
             {
                 y += GapBefore(i);
-                _layout[i].SetBounds(0, y, rowW, rowH);
-                y += rowH;
+                var h = HeightOf(_layout[i]);
+                _layout[i].SetBounds(0, y, rowW, h);
+                y += h;
             }
             Invalidate();
         }
@@ -582,7 +657,7 @@ namespace VolumeMixer
             if (code == Keys.Escape) { HideMixer(); return true; }
             if ((keyData & Keys.Control) != 0 && code == Keys.Tab)
             {
-                SwitchTab((_tab + 1) % 3);
+                SwitchTab((_tab + 1) % TabCount);
                 return true;
             }
             if (_tab != TabVolume) return base.ProcessCmdKey(ref msg, keyData);

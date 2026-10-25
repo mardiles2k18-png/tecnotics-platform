@@ -17,11 +17,18 @@ namespace VolumeMixer
         public string Name { get; private set; }   // nombre del .exe en minusculas, sin extension
         public string Title { get; private set; }  // descripcion del archivo, p. ej. "Google Chrome"
         public Image Icon { get; private set; }
+        public string Path { get; private set; }    // ruta del .exe (null si no se pudo leer)
 
         public static ProcessInfo Get(uint pid)
         {
             if (pid == 0) return null;
-            if (Cache.TryGetValue(pid, out var cached) && IsAlive(pid)) return cached;
+            // El PID puede haberse reutilizado para otro programa: se compara la ruta del .exe.
+            if (Cache.TryGetValue(pid, out var cached))
+            {
+                var path = cached.Path != null ? Native.GetProcessPath(pid) : null;
+                if (cached.Path != null ? string.Equals(path, cached.Path, StringComparison.OrdinalIgnoreCase) : IsAlive(pid))
+                    return cached;
+            }
 
             var info = Load(pid);
             if (info == null) Cache.Remove(pid);
@@ -29,12 +36,12 @@ namespace VolumeMixer
             return info;
         }
 
-        /// <summary>Descarta del cache los procesos que ya no tienen sesiones de audio.</summary>
-        public static void Prune(HashSet<uint> keep)
+        /// <summary>Descarta del cache los procesos que ya no estan en ejecucion.</summary>
+        public static void Prune(HashSet<uint> running)
         {
             var stale = new List<uint>();
             foreach (var pid in Cache.Keys)
-                if (!keep.Contains(pid)) stale.Add(pid);
+                if (!running.Contains(pid)) stale.Add(pid);
             foreach (var pid in stale) Cache.Remove(pid);
         }
 
@@ -53,11 +60,11 @@ namespace VolumeMixer
                 catch (InvalidOperationException) { return null; }
             }
 
-            var name = Path.GetFileNameWithoutExtension(path).ToLowerInvariant();
+            var name = System.IO.Path.GetFileNameWithoutExtension(path).ToLowerInvariant();
             string title = null;
             try { title = FileVersionInfo.GetVersionInfo(path).FileDescription?.Trim(); } catch { }
             if (string.IsNullOrEmpty(title))
-                title = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(Path.GetFileNameWithoutExtension(path));
+                title = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(System.IO.Path.GetFileNameWithoutExtension(path));
 
             Image icon = Icons.App;
             try
@@ -67,7 +74,7 @@ namespace VolumeMixer
             }
             catch { }
 
-            return new ProcessInfo { Name = name, Title = title, Icon = icon };
+            return new ProcessInfo { Name = name, Title = title, Icon = icon, Path = path };
         }
 
         private static bool IsAlive(uint pid)

@@ -182,7 +182,6 @@ namespace VolumeMixer
                 }
             }
 
-            ProcessInfo.Prune(seenPids);
             return result.OrderByDescending(d => d.IsDefault).ToList();
         }
 

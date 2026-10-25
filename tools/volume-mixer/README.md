@@ -5,8 +5,8 @@ el caso típico: una película en una pantalla y un juego en la otra, y ajustar 
 en un segundo.
 
 Como la pantalla secundaria no tiene los iconos de la bandeja, el panel también trae
-**Discos** (expulsar USB y discos externos) y **Wi‑Fi** (ver la conexión, conectarse,
-activar o desactivar).
+**Discos** (expulsar USB y discos externos), **Wi‑Fi** (ver la conexión, conectarse,
+activar o desactivar) y **Apps** (ver los programas en segundo plano y cerrarlos).
 
 - **Un solo `.exe` de ~90 KB**, sin instalar nada (usa .NET Framework 4.8, que ya viene en Windows 10/11).
 - Vive en la **bandeja del sistema** (junto al reloj) y en un **botón flotante** que puedes dejar
@@ -66,6 +66,19 @@ y el disco sigue conectado.
 - Si aparece **"Windows oculta las redes cercanas"**: Windows 11 exige permiso de ubicación para
   ver la lista de redes. El botón **Abrir** lleva a *Privacidad y seguridad → Ubicación*: activa
   *Servicios de ubicación* y *Permitir que las aplicaciones de escritorio accedan a tu ubicación*.
+
+### Pestaña Apps
+
+Muestra tus programas abiertos (no los de Windows) con su icono y la memoria que usan:
+
+- **En segundo plano (bandeja)**: programas sin ventana, normalmente los de los iconos ocultos
+  de la bandeja (Logitech G Hub, qBittorrent, Epic Games, etc.).
+- **Con ventana**: lo que tienes abierto en pantalla.
+
+**Cerrar** le pide al programa que se cierre, como al pulsar la X. Si a los 3 segundos sigue
+abierto, el botón cambia a **Forzar**, que lo termina de inmediato (lo que no esté guardado se pierde).
+Solo el botón cierra: un clic por error en la fila no hace nada. Los programas que corren como
+administrador no aparecen, porque no se pueden cerrar sin permisos de administrador.
 
 `Ctrl+Tab` cambia de pestaña cuando el panel tiene el foco.
 
